@@ -1,0 +1,42 @@
+# ── Python ────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+.eggs/
+*.egg-info/
+dist/
+build/
+
+# ── Virtual environments ───────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Environment & Secrets ─────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Database ──────────────────────────────────────────────
+*.db
+*.sqlite3
+
+# ── Uploads ───────────────────────────────────────────────
+uploads/*
+!uploads/.gitkeep
+
+# ── Testing ───────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── IDE & OS ──────────────────────────────────────────────
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
