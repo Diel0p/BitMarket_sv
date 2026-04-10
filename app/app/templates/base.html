@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}BitMarket SV{% endblock %} — ⚡ Bitcoin Marketplace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/app.css" />
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- ── Navbar ─────────────────────────────────────────── -->
+<header class="navbar">
+  <div class="container navbar__inner">
+    <a href="/" class="navbar__logo">
+      <span class="navbar__logo-bolt">⚡</span>
+      BitMarket<span class="navbar__logo-sv">SV</span>
+    </a>
+
+    <form id="search-form" class="navbar__search">
+      <input id="search-input" type="text" placeholder="Search products…" />
+      <button type="submit" class="navbar__search-btn">🔍</button>
+    </form>
+
+    <nav class="navbar__actions" id="navbar-auth">
+      <!-- hydrated by app.js -->
+      <a href="/login"    class="navbar__link">Login</a>
+      <a href="/register" class="navbar__btn">Sign up</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ── Page content ──────────────────────────────────── -->
+{% block content %}{% endblock %}
+
+<script src="/static/js/app.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

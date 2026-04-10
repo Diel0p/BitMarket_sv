@@ -1,0 +1,40 @@
+﻿"""
+Auth Controller
+===============
+Thin layer between routes and user_service.
+Handles HTTP concerns: request parsing, response shaping.
+"""
+
+from fastapi import Depends
+from fastapi.responses import JSONResponse
+
+from app.app.config.database import get_db
+from app.app.middleware.auth import get_current_user
+from app.app.models.user import UserRegisterRequest, UserLoginRequest, UserUpdateRequest
+from app.app.services import user_service
+
+
+async def register(data: UserRegisterRequest, db=Depends(get_db)):
+    result = await user_service.register_user(data, db)
+    return JSONResponse(status_code=201, content={"success": True, **result})
+
+
+async def login(data: UserLoginRequest, db=Depends(get_db)):
+    result = await user_service.login_user(data, db)
+    return {"success": True, **result}
+
+
+async def me(current_user: dict = Depends(get_current_user)):
+    return {"success": True, "user": current_user}
+
+
+async def update_profile(
+    data: UserUpdateRequest,
+    current_user: dict = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    updated = await user_service.update_user_profile(
+        current_user["id"], data.model_dump(exclude_none=True), db
+    )
+    return {"success": True, "user": updated}
+
