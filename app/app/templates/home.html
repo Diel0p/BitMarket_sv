@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<!-- ── Hero ──────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero__grid"></div>
+  <div class="container hero__inner">
+    <div class="hero__badge">⚡ Powered by Bitcoin Lightning</div>
+    <h1 class="hero__title">
+      The marketplace<br>
+      <span class="hero__accent">for the Bitcoin economy</span>
+    </h1>
+    <p class="hero__sub">
+      Buy and sell products with instant Bitcoin Lightning payments.<br>
+      No banks. No waiting. No borders.
+    </p>
+    <div class="hero__actions">
+      <a href="/products" class="btn btn-primary">Browse products →</a>
+      <a href="/register?role=seller" class="btn btn-outline">Start selling</a>
+    </div>
+    <div class="hero__perks">
+      <span>⚡ Instant settlement</span>
+      <span>🔒 Self-custodial</span>
+      <span>🌎 Borderless</span>
+      <span>💸 Near-zero fees</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── Categories ────────────────────────────────────────── -->
+<section class="container page">
+  <div class="section-header">
+    <h2 class="section-title">Browse categories</h2>
+  </div>
+  <div class="categories-row" id="categories-row">
+    <div class="category-pill" onclick="filterCat('Electronics')">💻 Electronics</div>
+    <div class="category-pill" onclick="filterCat('Books')">📚 Books</div>
+    <div class="category-pill" onclick="filterCat('Art')">🎨 Art & Collectibles</div>
+    <div class="category-pill" onclick="filterCat('Gaming')">🎮 Gaming</div>
+    <div class="category-pill" onclick="filterCat('Home')">🏡 Home & Garden</div>
+  </div>
+
+  <!-- ── Featured products ─────────────────────────────── -->
+  <div class="section-header" style="margin-top:48px">
+    <h2 class="section-title">Latest products</h2>
+    <a href="/products" class="text-orange text-sm">See all →</a>
+  </div>
+
+  <div id="featured-grid" class="products-grid">
+    <div class="empty-state"><div class="spinner"></div></div>
+  </div>
+
+  <!-- ── CTA ───────────────────────────────────────────── -->
+  <div class="cta-banner">
+    <div>
+      <h2>Start accepting Bitcoin today</h2>
+      <p>Join hundreds of sellers already using Lightning payments.</p>
+    </div>
+    <a href="/register?role=seller" class="btn btn-primary">Create seller account</a>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterCat(cat) {
+  window.location.href = '/products?category=' + encodeURIComponent(cat);
+}
+
+async function loadFeatured() {
+  try {
+    const data = await apiFetch('/products?limit=8&sort=created_at');
+    const grid = document.getElementById('featured-grid');
+    if (!data.products.length) {
+      grid.innerHTML = '<div class="empty-state"><p class="empty-state__icon">📦</p><p>No products yet. <a href="/register?role=seller" class="text-orange">Be the first seller!</a></p></div>';
+      return;
+    }
+    grid.innerHTML = data.products.map(productCard).join('');
+  } catch(e) {
+    document.getElementById('featured-grid').innerHTML = '<p class="text-muted">Could not load products.</p>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadFeatured);
+</script>
+
+<style>
+.hero {
+  position: relative; overflow: hidden;
+  padding: 80px 0 64px; border-bottom: 1px solid var(--border);
+}
+.hero__grid {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(247,147,26,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(247,147,26,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.hero__inner {
+  position: relative; display: flex; flex-direction: column;
+  align-items: center; text-align: center; gap: 22px;
+}
+.hero__badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em;
+  color: var(--orange); background: rgba(247,147,26,0.1);
+  border: 1px solid rgba(247,147,26,0.25); padding: 6px 16px; border-radius: 999px;
+}
+.hero__title {
+  font-size: clamp(2rem, 6vw, 3.6rem); font-weight: 700;
+  line-height: 1.1; letter-spacing: -0.03em;
+}
+.hero__accent { color: var(--orange); }
+.hero__sub { font-size: 1.05rem; color: var(--text-2); max-width: 500px; line-height: 1.7; }
+.hero__actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.hero__perks {
+  display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;
+  font-size: 0.85rem; color: var(--text-2); margin-top: 8px;
+}
+.categories-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.category-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  padding: 8px 18px; border-radius: 999px; font-size: 0.875rem;
+  font-weight: 500; cursor: pointer; transition: border-color 0.2s, color 0.2s;
+}
+.category-pill:hover { border-color: var(--orange); color: var(--orange); }
+.cta-banner {
+  margin-top: 64px;
+  background: linear-gradient(135deg, rgba(247,147,26,0.07), rgba(247,147,26,0.02));
+  border: 1px solid rgba(247,147,26,0.15); border-radius: var(--radius-xl);
+  padding: 40px; display: flex; align-items: center;
+  justify-content: space-between; gap: 24px; flex-wrap: wrap;
+}
+.cta-banner h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+.cta-banner p  { color: var(--text-2); font-size: 0.95rem; }
+</style>
+{% endblock %}

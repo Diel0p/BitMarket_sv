@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Seller Orders{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-sidebar__label">Seller Panel</div>
+    <a href="/seller"          class="dash-link">📊 Overview</a>
+    <a href="/seller/products" class="dash-link">📦 Products</a>
+    <a href="/seller/orders"   class="dash-link active">🛒 Orders</a>
+    <hr style="margin:12px 20px;border-color:var(--border)">
+    <a href="/products" class="dash-link">🌐 Marketplace</a>
+  </aside>
+  <main class="dash-main">
+    <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:24px">Orders</h1>
+    <div id="orders-wrap">
+      <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+if (!auth.isLoggedIn() || auth.user?.role !== 'seller') window.location.href = '/login';
+
+const FULFILLMENT = ['pending','processing','shipped','delivered','cancelled'];
+
+async function loadOrders() {
+  const wrap = document.getElementById('orders-wrap');
+  try {
+    const data = await apiFetch('/orders/seller');
+    if (!data.orders.length) {
+      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📭</div><p>No orders yet.</p></div>';
+      return;
+    }
+    wrap.innerHTML = data.orders.map(o => `
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <span class="mono text-sm" style="color:var(--text-3)">#${o.id.slice(-8).toUpperCase()}</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              ${statusPill(o.payment_status)}
+              <span class="text-muted text-sm">${new Date(o.created_at).toLocaleDateString()}</span>
+            </div>
+          </div>
+          ${o.items.map((item, idx) => o.payment_status === 'paid' ? `
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--border);flex-wrap:wrap">
+              <div style="flex:1;min-width:160px">
+                <p style="font-weight:500;font-size:0.875rem">${item.title} ×${item.quantity}</p>
+                <p class="text-muted text-sm">⚡ ${item.subtotal_sats.toLocaleString()} sats</p>
+              </div>
+              <select onchange="updateFulfillment('${o.id}', ${idx}, this.value)" style="width:auto;min-width:140px;padding:6px 10px">
+                ${FULFILLMENT.map(s => `<option ${s===item.fulfillment_status?'selected':''}>${s}</option>`).join('')}
+              </select>
+            </div>
+          ` : `
+            <div style="padding:8px 0;border-top:1px solid var(--border)">
+              <p style="font-size:0.875rem">${item.title} ×${item.quantity}</p>
+              <p class="text-muted text-sm">Waiting for payment…</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    wrap.innerHTML = '<div class="alert alert-error">' + e.message + '</div>';
+  }
+}
+
+async function updateFulfillment(orderId, idx, status) {
+  try {
+    await apiFetch(`/orders/${orderId}/fulfillment`, {
+      method: 'PATCH',
+      body: JSON.stringify({ item_index: idx, status })
+    });
+  } catch(e) { alert(e.message); }
+}
+
+document.addEventListener('DOMContentLoaded', loadOrders);
+</script>
+{% endblock %}

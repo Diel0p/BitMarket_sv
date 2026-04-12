@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Products{% endblock %}
+
+{% block content %}
+<div class="container page">
+  <div class="products-layout">
+    <!-- Sidebar filters -->
+    <aside class="filters-sidebar">
+      <h3 class="filters-title">Filters</h3>
+
+      <div class="filter-group">
+        <p class="filter-label">Category</p>
+        <button class="filter-btn active" onclick="setFilter('category','',this)">All</button>
+        <button class="filter-btn" onclick="setFilter('category','Electronics',this)">💻 Electronics</button>
+        <button class="filter-btn" onclick="setFilter('category','Books',this)">📚 Books</button>
+        <button class="filter-btn" onclick="setFilter('category','Art',this)">🎨 Art</button>
+        <button class="filter-btn" onclick="setFilter('category','Gaming',this)">🎮 Gaming</button>
+        <button class="filter-btn" onclick="setFilter('category','Home',this)">🏡 Home</button>
+      </div>
+
+      <div class="filter-group">
+        <p class="filter-label">Sort</p>
+        <button class="filter-btn active" onclick="setFilter('sort','created_at',this)">Newest</button>
+        <button class="filter-btn" onclick="setFilter('sort','price_asc',this)">Price ↑</button>
+        <button class="filter-btn" onclick="setFilter('sort','price_desc',this)">Price ↓</button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main>
+      <div class="products-header">
+        <h2 id="page-title" class="section-title" style="margin-bottom:0">All products</h2>
+        <span id="total-count" class="text-muted text-sm"></span>
+      </div>
+
+      <div id="products-grid" class="products-grid" style="margin-top:24px">
+        <div class="empty-state"><div class="spinner"></div></div>
+      </div>
+
+      <div id="pagination" class="pagination" style="margin-top:32px;display:none">
+        <button class="btn btn-ghost btn-sm" id="prev-btn" onclick="changePage(-1)">← Prev</button>
+        <span id="page-info" class="text-muted text-sm"></span>
+        <button class="btn btn-ghost btn-sm" id="next-btn" onclick="changePage(1)">Next →</button>
+      </div>
+    </main>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let filters = { q: '', category: '', sort: 'created_at', page: 1 };
+
+// Pick up URL params on load
+const params = new URLSearchParams(location.search);
+if (params.get('q'))        filters.q        = params.get('q');
+if (params.get('category')) filters.category = params.get('category');
+
+async function loadProducts() {
+  const grid = document.getElementById('products-grid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px"><div class="spinner"></div></div>';
+
+  const qs = new URLSearchParams();
+  if (filters.q)        qs.set('q',        filters.q);
+  if (filters.category) qs.set('category', filters.category);
+  qs.set('sort',  filters.sort);
+  qs.set('page',  filters.page);
+  qs.set('limit', '20');
+
+  try {
+    const data = await apiFetch('/products?' + qs.toString());
+
+    document.getElementById('page-title').textContent =
+      filters.q ? `Results for "${filters.q}"` : 'All products';
+    document.getElementById('total-count').textContent = `${data.total} products`;
+
+    if (!data.products.length) {
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state__icon">😕</div><p>No products found</p></div>';
+    } else {
+      grid.innerHTML = data.products.map(productCard).join('');
+    }
+
+    // Pagination
+    const pagDiv = document.getElementById('pagination');
+    if (data.pages > 1) {
+      pagDiv.style.display = 'flex';
+      document.getElementById('page-info').textContent = `Page ${data.page} of ${data.pages}`;
+      document.getElementById('prev-btn').disabled = data.page <= 1;
+      document.getElementById('next-btn').disabled = data.page >= data.pages;
+    } else {
+      pagDiv.style.display = 'none';
+    }
+  } catch(e) {
+    grid.innerHTML = '<p class="text-muted" style="grid-column:1/-1">Could not load products.</p>';
+  }
+}
+
+function setFilter(key, val, btn) {
+  filters[key] = val;
+  filters.page = 1;
+  if (btn) {
+    btn.closest('.filter-group').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  loadProducts();
+}
+
+function changePage(dir) {
+  filters.page = Math.max(1, filters.page + dir);
+  loadProducts();
+}
+
+document.addEventListener('DOMContentLoaded', loadProducts);
+</script>
+
+<style>
+.products-layout {
+  display: grid; grid-template-columns: 200px 1fr; gap: 40px; align-items: start;
+}
+.filters-sidebar { position: sticky; top: 80px; display: flex; flex-direction: column; gap: 24px; }
+.filters-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); margin-bottom: 4px; }
+.filter-group { display: flex; flex-direction: column; gap: 2px; }
+.filter-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); margin-bottom: 6px; }
+.filter-btn {
+  text-align: left; padding: 7px 10px; border-radius: var(--radius-sm);
+  font-size: 0.875rem; color: var(--text-2); cursor: pointer;
+  background: none; border: none; transition: background 0.15s, color 0.15s;
+}
+.filter-btn:hover { background: var(--bg-hover); color: var(--text-1); }
+.filter-btn.active { background: var(--orange-glow); color: var(--orange); font-weight: 600; }
+.products-header { display: flex; align-items: baseline; justify-content: space-between; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 16px; }
+@media (max-width: 768px) { .products-layout { grid-template-columns: 1fr; } .filters-sidebar { display: none; } }
+</style>
+{% endblock %}

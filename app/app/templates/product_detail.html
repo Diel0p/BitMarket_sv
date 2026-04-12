@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Product{% endblock %}
+
+{% block content %}
+<div class="container page" id="product-page">
+  <div style="text-align:center;padding:60px"><div class="spinner"></div></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const productId = location.pathname.split('/').pop();
+
+async function loadProduct() {
+  const page = document.getElementById('product-page');
+  try {
+    const data = await apiFetch(`/products/${productId}`);
+    const p = data.product;
+    const emoji = { Electronics:'💻', Books:'📚', Art:'🎨', Gaming:'🎮', 'Art & Collectibles':'🎨' }[p.category] || '📦';
+    const coverImage = p.images && p.images.length ? p.images[0] : null;
+    const canBuy = auth.isLoggedIn() && auth.user?.role === 'buyer';
+    const needLogin = !auth.isLoggedIn();
+
+    page.innerHTML = `
+      <a href="/products" class="text-muted text-sm" style="display:inline-block;margin-bottom:24px">← Back to products</a>
+      <div class="product-detail fade-in">
+        <div class="product-detail__gallery">
+          <div class="product-detail__img">${coverImage
+            ? `<img src="${coverImage}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" />`
+            : emoji}
+          </div>
+        </div>
+        <div class="product-detail__info">
+          <p class="product-card__cat">${p.category}</p>
+          <h1 class="product-detail__title">${p.title}</h1>
+          <p class="text-muted text-sm">Sold by <strong style="color:var(--text-1)">${p.seller_name || 'Unknown'}</strong></p>
+
+          <div class="price-box">
+            <div>
+              <span style="font-size:0.9rem;color:var(--text-2)">⚡ </span>
+              <span class="price-sats" style="font-size:2rem">${p.price_sats.toLocaleString()}</span>
+              <span class="price-unit"> sats</span>
+            </div>
+            <p class="text-muted text-sm mono" style="margin-top:4px">≈ ${sats2btc(p.price_sats)} BTC</p>
+          </div>
+
+          <div class="stock-indicator ${p.stock === 0 ? 'out' : p.stock < 5 ? 'low' : 'ok'}">
+            ${p.stock === 0 ? '✗ Out of stock' : p.stock < 5 ? `⚠ Only ${p.stock} left` : `✓ In stock (${p.stock})`}
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;margin:20px 0">
+            <div class="qty-control">
+              <button onclick="changeQty(-1)">−</button>
+              <span id="qty">1</span>
+              <button onclick="changeQty(1)">+</button>
+            </div>
+            ${p.stock > 0 && canBuy
+              ? `<button class="btn btn-primary" style="flex:1" onclick="buyNow()">⚡ Buy now</button>`
+              : p.stock > 0 && needLogin
+              ? `<a href="/login" class="btn btn-outline" style="flex:1">Login to buy</a>`
+              : p.stock === 0 ? `<button class="btn btn-ghost" disabled style="flex:1">Out of stock</button>`
+              : `<button class="btn btn-ghost" disabled style="flex:1">Buyers only</button>`
+            }
+          </div>
+
+          <div class="product-detail__desc">
+            <h3>About this product</h3>
+            <p>${p.description}</p>
+          </div>
+
+          ${p.tags.length ? `<div class="tags-row">${p.tags.map(t=>`<span class="tag">#${t}</span>`).join('')}</div>` : ''}
+        </div>
+      </div>
+    `;
+    window._product = p;
+  } catch(e) {
+    page.innerHTML = '<p class="text-muted">Product not found.</p>';
+  }
+}
+
+let qty = 1;
+function changeQty(dir) {
+  const stock = window._product?.stock || 1;
+  qty = Math.max(1, Math.min(stock, qty + dir));
+  document.getElementById('qty').textContent = qty;
+}
+
+async function buyNow() {
+  if (!auth.isLoggedIn()) { window.location.href = '/login'; return; }
+  const p = window._product;
+  try {
+    const order = await apiFetch('/orders', {
+      method: 'POST',
+      body: JSON.stringify({
+        items: [{ product_id: p.id, quantity: qty }],
+        shipping_address: { name: auth.user.name, street: 'TBD', city: 'TBD', country: 'TBD' }
+      })
+    });
+    window.location.href = `/checkout/${order.order_id}?hash=${order.invoice.payment_hash}&amount=${order.invoice.amount_sats}&mock=${order.invoice.is_mock}`;
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadProduct);
+</script>
+
+<style>
+.product-detail {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start;
+}
+.product-detail__img {
+  aspect-ratio: 4/3; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  display: flex; align-items: center; justify-content: center; font-size: 5rem;
+}
+.product-detail__title { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; margin: 8px 0; }
+.price-box {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 20px; margin: 16px 0;
+}
+.stock-indicator { font-size: 0.875rem; font-weight: 600; padding: 8px 12px; border-radius: var(--radius-sm); }
+.stock-indicator.ok  { background: rgba(34,197,94,0.08);  color: var(--success); }
+.stock-indicator.low { background: rgba(245,158,11,0.08); color: var(--warning); }
+.stock-indicator.out { background: rgba(239,68,68,0.08);  color: var(--error); }
+.qty-control {
+  display: flex; align-items: center;
+  border: 1px solid var(--border-md); border-radius: var(--radius-md); overflow: hidden;
+}
+.qty-control button {
+  width: 40px; height: 44px; background: var(--bg-card); color: var(--text-1);
+  font-size: 1.2rem; cursor: pointer; transition: background 0.15s;
+  border: none; font-family: var(--font);
+}
+.qty-control button:hover { background: var(--bg-hover); }
+.qty-control span {
+  width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  font-weight: 600; border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+}
+.product-detail__desc h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; }
+.product-detail__desc p { font-size: 0.9rem; color: var(--text-2); line-height: 1.7; white-space: pre-line; }
+.tags-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+.tag { font-size: 0.75rem; color: var(--text-3); background: var(--bg-surface); border: 1px solid var(--border); padding: 3px 10px; border-radius: 999px; }
+@media (max-width: 768px) { .product-detail { grid-template-columns: 1fr; gap: 24px; } }
+</style>
+{% endblock %}

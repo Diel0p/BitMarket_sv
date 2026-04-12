@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}My Products{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-sidebar__label">Seller Panel</div>
+    <a href="/seller"          class="dash-link">📊 Overview</a>
+    <a href="/seller/products" class="dash-link active">📦 Products</a>
+    <a href="/seller/orders"   class="dash-link">🛒 Orders</a>
+    <hr style="margin:12px 20px;border-color:var(--border)">
+    <a href="/products" class="dash-link">🌐 Marketplace</a>
+  </aside>
+  <main class="dash-main">
+    <div class="section-header">
+      <div>
+        <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">My products</h1>
+        <p class="text-muted text-sm" id="prod-count"></p>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="toggleForm()">+ New product</button>
+    </div>
+
+    <!-- Create product form -->
+    <div id="new-product-form" class="card" style="display:none;margin-bottom:24px">
+      <div class="card-body">
+        <h3 class="card-title">Create new product</h3>
+        <div id="form-msg"></div>
+        <form id="product-form">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Title *</label>
+              <input id="p-title" required minlength="3" />
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Description *</label>
+              <textarea id="p-desc" required minlength="10"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Price (satoshis) *</label>
+              <input id="p-price" type="number" min="1" required placeholder="e.g. 50000" />
+              <p class="form-hint" id="btc-hint"></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Stock *</label>
+              <input id="p-stock" type="number" min="0" required placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Category *</label>
+              <select id="p-category">
+                <option>Electronics</option>
+                <option>Books</option>
+                <option>Art & Collectibles</option>
+                <option>Gaming</option>
+                <option>Home & Garden</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tags (comma separated)</label>
+              <input id="p-tags" placeholder="bitcoin, hardware, rare" />
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Product image (optional)</label>
+              <input id="p-image" type="file" accept="image/*" />
+              <p class="form-hint">JPG, PNG, WEBP o GIF. Max 5MB.</p>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:8px">
+            <button type="submit" class="btn btn-primary" id="create-btn">Create product</button>
+            <button type="button" class="btn btn-ghost" onclick="toggleForm()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Products table -->
+    <div id="products-wrap">
+      <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+if (!auth.isLoggedIn() || auth.user?.role !== 'seller') window.location.href = '/login';
+
+function toggleForm() {
+  const f = document.getElementById('new-product-form');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+// Live BTC preview
+document.addEventListener('DOMContentLoaded', () => {
+  const priceInput = document.getElementById('p-price');
+  if (priceInput) priceInput.addEventListener('input', e => {
+    const hint = document.getElementById('btc-hint');
+    const v = parseInt(e.target.value);
+    hint.textContent = v > 0 ? `≈ ${sats2btc(v)} BTC` : '';
+  });
+  loadMyProducts();
+});
+
+async function loadMyProducts() {
+  const wrap = document.getElementById('products-wrap');
+  try {
+    const data = await apiFetch('/products/mine');
+    document.getElementById('prod-count').textContent = data.products.length + ' listings';
+    if (!data.products.length) {
+      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📦</div><p>No products yet. Create your first listing!</p></div>';
+      return;
+    }
+    wrap.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Product</th><th>Category</th><th>Price (sats)</th><th>Stock</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            ${data.products.map(p => `
+              <tr>
+                <td><strong style="font-size:0.875rem">${p.title}</strong></td>
+                <td class="text-muted text-sm">${p.category}</td>
+                <td><span class="mono text-orange text-sm">⚡ ${p.price_sats.toLocaleString()}</span></td>
+                <td>${p.stock}</td>
+                <td>${statusPill(p.status)}</td>
+                <td>
+                  <div style="display:flex;gap:6px">
+                    <a href="/products/${p.id}" class="btn btn-ghost btn-sm">View</a>
+                    <button class="btn btn-danger btn-sm" onclick="removeProduct('${p.id}')">Remove</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch(e) {
+    wrap.innerHTML = '<div class="alert alert-error">Could not load products.</div>';
+  }
+}
+
+async function uploadProductImageIfSelected() {
+  const input = document.getElementById('p-image');
+  const file = input?.files?.[0];
+  if (!file) return null;
+
+  const body = new FormData();
+  body.append('image', file);
+
+  const res = await fetch('/api/products/upload-image', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${auth.token}` },
+    body,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || data.message || 'Image upload failed');
+  return data.image_url;
+}
+
+document.getElementById('product-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('create-btn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  clearMsg('form-msg');
+  try {
+    const imageUrl = await uploadProductImageIfSelected();
+    const tags = document.getElementById('p-tags').value
+      .split(',').map(t => t.trim()).filter(Boolean);
+    await apiFetch('/products', {
+      method: 'POST',
+      body: JSON.stringify({
+        title: document.getElementById('p-title').value,
+        description: document.getElementById('p-desc').value,
+        price_sats: parseInt(document.getElementById('p-price').value),
+        stock: parseInt(document.getElementById('p-stock').value),
+        category: document.getElementById('p-category').value,
+        tags,
+        images: imageUrl ? [imageUrl] : [],
+      })
+    });
+    showSuccess('form-msg', '✓ Product created!');
+    document.getElementById('product-form').reset();
+    setTimeout(() => { toggleForm(); loadMyProducts(); }, 1000);
+  } catch(e) {
+    showError('form-msg', e.message);
+  } finally { btn.disabled = false; btn.textContent = 'Create product'; }
+});
+
+async function removeProduct(id) {
+  if (!confirm('Deactivate this product?')) return;
+  try {
+    await apiFetch(`/products/${id}`, { method: 'DELETE' });
+    loadMyProducts();
+  } catch(e) { alert(e.message); }
+}
+</script>
+{% endblock %}
