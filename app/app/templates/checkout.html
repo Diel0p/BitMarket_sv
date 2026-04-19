@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+<div class="page-narrow">
+  <h1 class="section-title" style="text-align:center;margin-bottom:8px">⚡ Pay with Lightning</h1>
+  <p class="text-muted text-sm" style="text-align:center;margin-bottom:28px">Scan the invoice or wait for mock confirmation</p>
+
+  <div id="checkout-content">
+    <div style="text-align:center"><div class="spinner"></div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const params    = new URLSearchParams(location.search);
+const orderIdEl = location.pathname.split('/').pop();
+const hash      = params.get('hash');
+const amountSats = parseInt(params.get('amount') || '0');
+const isMock    = params.get('mock') === 'True' || params.get('mock') === 'true';
+
+let pollInterval = null;
+let elapsed = 0;
+const MOCK_CONFIRM = 10; // seconds
+
+function renderQr(invoiceString) {
+  const wrap = document.getElementById('qr-wrap');
+  if (!wrap) return;
+
+  wrap.innerHTML = '';
+  if (!invoiceString) {
+    wrap.innerHTML = `
+      <div style="font-size:0.55rem;font-family:var(--mono);color:#000;word-break:break-all;text-align:center;line-height:1.3">
+        Invoice not available
+      </div>
+    `;
+    return;
+  }
+  const img = document.createElement('img');
+  img.alt = 'Lightning invoice QR';
+  img.width = 180;
+  img.height = 180;
+  img.style.maxWidth = '100%';
+  img.src = `/api/payments/qr?text=${encodeURIComponent(invoiceString)}`;
+  img.onerror = () => {
+    wrap.innerHTML = `
+      <div style="font-size:0.55rem;font-family:var(--mono);color:#000;word-break:break-all;text-align:center;line-height:1.3">
+        ${invoiceString}
+      </div>
+    `;
+  };
+  wrap.appendChild(img);
+}
+
+function renderInvoice() {
+  const box = document.getElementById('checkout-content');
+  box.innerHTML = `
+    ${isMock ? `<div class="mock-banner">🟡 <strong>Mock mode</strong> — payment auto-confirms in ~${MOCK_CONFIRM} seconds. No real Bitcoin needed.</div>` : ''}
+
+    <div class="invoice-box fade-in">
+      <p class="text-muted text-sm" style="margin-bottom:12px">Amount due</p>
+      <div class="invoice-amount">⚡ ${amountSats.toLocaleString()} <span style="font-size:1rem;color:var(--text-2)">sats</span></div>
+      <p class="text-muted text-sm mono" style="margin-top:4px">≈ ${sats2btc(amountSats)} BTC</p>
+
+      <div id="qr-wrap" style="margin:24px auto;width:200px;height:200px;background:white;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:16px">
+        <div style="font-size:0.55rem;font-family:var(--mono);color:#000;word-break:break-all;text-align:center;line-height:1.3" id="qr-text">
+          Loading invoice…
+        </div>
+      </div>
+
+      <div class="invoice-string" id="invoice-str">Fetching invoice…</div>
+
+      <button class="btn btn-ghost btn-sm" onclick="copyInvoice()" style="margin-bottom:20px">📋 Copy invoice</button>
+
+      <hr />
+
+      <div class="payment-status-bar" id="status-bar">
+        <div class="spinner" style="width:16px;height:16px"></div>
+        <span id="status-text">Waiting for payment…</span>
+      </div>
+
+      ${isMock ? `<div style="margin-top:12px;background:var(--bg-surface);border-radius:var(--radius-sm);height:6px;overflow:hidden"><div id="progress-bar" style="height:100%;background:var(--orange);width:0%;transition:width 0.5s linear"></div></div>` : ''}
+    </div>
+
+    <div id="success-box" style="display:none" class="fade-in">
+      <div style="text-align:center;padding:40px;background:var(--bg-card);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius-xl);margin-top:16px">
+        <div style="font-size:4rem;margin-bottom:12px">⚡</div>
+        <h2 style="font-size:1.8rem;font-weight:700;color:var(--success);letter-spacing:-0.02em">Payment confirmed!</h2>
+        <p class="text-muted" style="margin-top:8px">Your order has been placed successfully.</p>
+        <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <a href="/orders" class="btn btn-primary">View my orders</a>
+          <a href="/products" class="btn btn-outline">Continue shopping</a>
+        </div>
+      </div>
+    </div>
+  `;
+
+  loadInvoiceDetails();
+  startPolling();
+}
+
+async function loadInvoiceDetails() {
+  try {
+    const data = await apiFetch(`/orders/payment-status/${hash}`);
+    const strEl = document.getElementById('invoice-str');
+    if (strEl) {
+      const req = data.payment_request || hash;
+      strEl.textContent = req;
+      renderQr(req);
+    }
+  } catch(_) {}
+}
+
+function startPolling() {
+  pollInterval = setInterval(pollStatus, 2000);
+  if (isMock) {
+    // Progress bar visual
+    const bar = document.getElementById('progress-bar');
+    const ticker = setInterval(() => {
+      elapsed += 0.2;
+      if (bar) bar.style.width = Math.min(100, (elapsed / MOCK_CONFIRM) * 100) + '%';
+      if (elapsed >= MOCK_CONFIRM) clearInterval(ticker);
+    }, 200);
+  }
+}
+
+async function pollStatus() {
+  try {
+    const data = await apiFetch(`/orders/payment-status/${hash}`);
+    if (data.paid) {
+      clearInterval(pollInterval);
+      document.getElementById('status-bar').style.display = 'none';
+      document.getElementById('success-box').style.display = 'block';
+      if (document.getElementById('progress-bar'))
+        document.getElementById('progress-bar').style.width = '100%';
+    } else {
+      const t = document.getElementById('status-text');
+      if (t) t.textContent = isMock
+        ? `Mock mode — confirming in ~${Math.max(0, MOCK_CONFIRM - Math.round(elapsed))}s…`
+        : 'Waiting for Lightning payment…';
+    }
+  } catch(_) {}
+}
+
+function copyInvoice() {
+  const txt = document.getElementById('invoice-str')?.textContent;
+  if (txt) { navigator.clipboard.writeText(txt); alert('Invoice copied!'); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!hash) { document.getElementById('checkout-content').innerHTML = '<p class="text-muted">Invalid checkout link.</p>'; return; }
+  if (!auth.isLoggedIn()) { window.location.href = '/login'; return; }
+  renderInvoice();
+});
+</script>
+{% endblock %}

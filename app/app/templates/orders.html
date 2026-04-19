@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}My Orders{% endblock %}
+
+{% block content %}
+<div class="container page">
+  <h1 class="section-title">My orders</h1>
+  <div id="orders-list">
+    <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadOrders() {
+  if (!auth.isLoggedIn()) { window.location.href = '/login'; return; }
+  const el = document.getElementById('orders-list');
+  try {
+    const data = await apiFetch('/orders/mine');
+    if (!data.orders.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📦</div><p>No orders yet. <a href="/products" class="text-orange">Start shopping!</a></p></div>';
+      return;
+    }
+    el.innerHTML = data.orders.map(order => `
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+            <div>
+              <span class="mono text-sm" style="color:var(--text-3)">#${order.id.slice(-8).toUpperCase()}</span>
+              <span class="text-muted text-sm" style="margin-left:10px">${new Date(order.created_at).toLocaleDateString()}</span>
+            </div>
+            ${statusPill(order.payment_status)}
+          </div>
+          ${order.items.map(item => `
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--border)">
+              <div style="font-size:1.5rem">📦</div>
+              <div style="flex:1">
+                <p style="font-weight:500;font-size:0.9rem">${item.title}</p>
+                <p class="text-muted text-sm">Qty: ${item.quantity} · ${statusPill(item.fulfillment_status)}</p>
+              </div>
+              <span class="mono text-sm text-orange">⚡ ${item.subtotal_sats.toLocaleString()} sats</span>
+            </div>
+          `).join('')}
+          <div style="text-align:right;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+            <span class="text-muted text-sm">Total: </span>
+            <span class="mono text-orange" style="font-weight:700">⚡ ${order.total_sats.toLocaleString()} sats</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="alert alert-error">Could not load orders: ' + e.message + '</div>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadOrders);
+</script>
+{% endblock %}

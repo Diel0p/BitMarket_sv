@@ -1,16 +1,16 @@
-"""
-Order Service – cart validation, order creation, payment confirmation.
+﻿"""
+Order Service â€” cart validation, order creation, payment confirmation.
 
 Flow:
   POST /api/orders
-    → validate stock for each item
-    → create Order document
-    → call payment_service.create_invoice()
-    → return order + BOLT11 invoice string
+    â†’ validate stock for each item
+    â†’ create Order document
+    â†’ call payment_service.create_invoice()
+    â†’ return order + BOLT11 invoice string
 
   GET /api/orders/payment-status/{hash}
-    → poll payment_service.check_invoice_status()
-    → if paid: update order + invoice status
+    â†’ poll payment_service.check_invoice_status()
+    â†’ if paid: update order + invoice status
 """
 
 from fastapi import HTTPException
@@ -36,22 +36,44 @@ def _group_order_items_by_seller(order_items: list[dict]) -> dict[str, int]:
 
 async def _process_seller_payouts(order: dict, db) -> dict:
     existing_payouts = order.get("payouts") or []
+    existing_commission = order.get("commission_payout")
     if existing_payouts:
         statuses = {p.get("status") for p in existing_payouts}
+        commission_status = (existing_commission or {}).get("status")
         if statuses == {"paid"}:
-            return {"payout_status": "paid", "payouts": existing_payouts}
+            if commission_status in {"paid", "skipped"}:
+                return {
+                    "payout_status": "paid",
+                    "payouts": existing_payouts,
+                    "commission_payout": existing_commission,
+                }
+            return {
+                "payout_status": "partial",
+                "payouts": existing_payouts,
+                "commission_payout": existing_commission,
+            }
         if "failed" in statuses and "paid" in statuses:
-            return {"payout_status": "partial", "payouts": existing_payouts}
-        return {"payout_status": order.get("payout_status", "failed"), "payouts": existing_payouts}
+            return {
+                "payout_status": "partial",
+                "payouts": existing_payouts,
+                "commission_payout": existing_commission,
+            }
+        return {
+            "payout_status": order.get("payout_status", "failed"),
+            "payouts": existing_payouts,
+            "commission_payout": existing_commission,
+        }
 
     fee_percent = float(order.get("marketplace_fee_percent", settings.marketplace_fee_percent))
     seller_totals = _group_order_items_by_seller(order.get("items", []))
     payouts = []
+    total_commission_sats = 0
 
     for seller_id, gross_sats in seller_totals.items():
         seller = db_find_one("users", id=seller_id)
         fee_sats = int(gross_sats * fee_percent / 100)
         payout_sats = gross_sats - fee_sats
+        total_commission_sats += fee_sats
         payout_record = {
             "seller_id": seller_id,
             "seller_name": seller.get("name") if seller else "Unknown",
@@ -75,6 +97,7 @@ async def _process_seller_payouts(order: dict, db) -> dict:
                 seller["lightning_address"],
                 payout_sats,
                 f"BitMarket payout {order['id'][-8:].upper()}",
+                seller_invoice_key=seller.get("lnbits_invoice_key"),
             )
             payout_record["status"] = "paid"
             payout_record["payment_hash"] = payout.get("payment_hash")
@@ -85,12 +108,64 @@ async def _process_seller_payouts(order: dict, db) -> dict:
 
         payouts.append(payout_record)
 
-    payout_status = "paid"
-    if any(p["status"] == "failed" for p in payouts):
-        payout_status = "partial" if any(p["status"] == "paid" for p in payouts) else "failed"
+    raw_commission_address = (settings.platform_commission_lightning_address or "").strip()
+    # Skip explicit payout if address is empty or still has the default placeholder.
+    # The 5% is already retained in the platform wallet because the buyer paid
+    # the invoice created by the platform's admin key.
+    _is_placeholder = not raw_commission_address or "REEMPLAZAR" in raw_commission_address.upper()
+    commission_address = "" if _is_placeholder else raw_commission_address.lower()
 
-    db_update("orders", order["id"], {"payouts": payouts, "payout_status": payout_status})
-    return {"payout_status": payout_status, "payouts": payouts}
+    commission_payout = {
+        "type": "platform_commission",
+        "destination": commission_address or "platform_wallet",
+        "amount_sats": total_commission_sats,
+        "status": "pending",
+        "payment_hash": None,
+        "error": None,
+    }
+
+    if total_commission_sats <= 0:
+        commission_payout["status"] = "skipped"
+        commission_payout["error"] = "No commission amount to payout"
+    elif not commission_address:
+        # 5% stays in the platform wallet — no explicit transfer needed
+        commission_payout["status"] = "retained"
+        commission_payout["destination"] = "platform_wallet"
+        commission_payout["error"] = None
+    else:
+        try:
+            payout = await payment_service.payout_to_lightning_address(
+                commission_address,
+                total_commission_sats,
+                f"BitMarket commission {order['id'][-8:].upper()}",
+            )
+            commission_payout["status"] = "paid"
+            commission_payout["payment_hash"] = payout.get("payment_hash")
+            commission_payout["is_mock"] = payout.get("is_mock", True)
+        except Exception as exc:
+            commission_payout["status"] = "failed"
+            commission_payout["error"] = str(exc)
+
+    payout_status = "paid"
+    if any(p["status"] == "failed" for p in payouts) or commission_payout.get("status") == "failed":
+        payout_status = "partial" if any(p["status"] == "paid" for p in payouts) else "failed"
+    elif commission_payout.get("status") == "pending":
+        payout_status = "pending"
+
+    db_update(
+        "orders",
+        order["id"],
+        {
+            "payouts": payouts,
+            "commission_payout": commission_payout,
+            "payout_status": payout_status,
+        },
+    )
+    return {
+        "payout_status": payout_status,
+        "payouts": payouts,
+        "commission_payout": commission_payout,
+    }
 
 
 async def create_order(data: OrderCreateRequest, buyer_id: str, db) -> dict:
@@ -207,11 +282,13 @@ async def check_and_confirm_payment(payment_hash: str, db) -> dict:
         order = db_find_one("orders", invoice_id=payment_hash)
         return {
             "payment_hash": payment_hash,
+            "payment_request": invoice.get("payment_request"),
             "paid": True,
             "status": "paid",
             "settled_at": invoice.get("paid_at"),
             "payout_status": order.get("payout_status") if order else None,
             "payouts": order.get("payouts", []) if order else [],
+            "commission_payout": order.get("commission_payout") if order else None,
         }
 
     result = await payment_service.check_invoice_status(payment_hash)
@@ -232,18 +309,20 @@ async def check_and_confirm_payment(payment_hash: str, db) -> dict:
             })
             payout_result = await _process_seller_payouts({**order, "paid_at": settled_str}, db)
         else:
-            payout_result = {"payout_status": None, "payouts": []}
+            payout_result = {"payout_status": None, "payouts": [], "commission_payout": None}
     else:
-        payout_result = {"payout_status": None, "payouts": []}
+        payout_result = {"payout_status": None, "payouts": [], "commission_payout": None}
 
     return {
         "payment_hash": payment_hash,
+        "payment_request": invoice.get("payment_request"),
         "paid":         result["paid"],
         "status":       "paid" if result["paid"] else "pending",
         "settled_at":   result.get("settled_at"),
         "is_mock":      result.get("is_mock", True),
         "payout_status": payout_result["payout_status"],
         "payouts": payout_result["payouts"],
+        "commission_payout": payout_result["commission_payout"],
     }
 
 
@@ -274,3 +353,4 @@ async def update_fulfillment(order_id: str, data: FulfillmentUpdateRequest, sell
     items[data.item_index]["fulfillment_status"] = data.status.value
     db_update("orders", order_id, {"items": items})
     return {"message": "Fulfillment status updated", "new_status": data.status.value}
+
