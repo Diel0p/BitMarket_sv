@@ -1,30 +1,43 @@
-"""
-User Service - auth, profile, moderation.
+﻿"""
+User Service â€” auth, profile, moderation.
 Uses in-memory DB helpers (swap to Motor by changing db_* calls).
 """
 
 import re
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
-from app.app.config.database import db_insert, db_find_one, db_update
+from app.app.config.database import (
+    db_insert, db_find_one, db_find_all, db_update, db_count,
+)
 from app.app.middleware.auth import hash_password, verify_password, create_access_token
 from app.app.models.user import UserRegisterRequest, UserLoginRequest
 from app.app.utils.helpers import utcnow
 
 
 _LIGHTNING_ADDRESS_RE = re.compile(r"^[a-z0-9._-]+@[a-z0-9.-]+\.[a-z]{2,}$", re.IGNORECASE)
+_LNURLP_URL_RE = re.compile(
+    r"^https?://[^\s]+/(\.well-known/lnurlp/[^\s/?#]+|lnurlp/link/[^\s/?#]+|wallet/[a-f0-9]+)(?:\?[^\s#]*)?$",
+    re.IGNORECASE,
+)
 
 
 def _normalize_lightning_address(value: str | None) -> str | None:
     if value is None:
         return None
-    normalized = value.strip().lower()
+    normalized = value.strip()
     if not normalized:
         return None
-    if not _LIGHTNING_ADDRESS_RE.match(normalized):
-        raise HTTPException(status_code=400, detail="Invalid Lightning Address format")
-    return normalized
+    if _LNURLP_URL_RE.match(normalized):
+        return normalized
+
+    normalized_lower = normalized.lower()
+    if not _LIGHTNING_ADDRESS_RE.match(normalized_lower):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid payout destination. Use Lightning Address (user@domain) or LNURLp URL (not LndHub URL)",
+        )
+    return normalized_lower
 
 
 async def register_user(data: UserRegisterRequest, db) -> dict:
@@ -34,24 +47,26 @@ async def register_user(data: UserRegisterRequest, db) -> dict:
     lightning_address = _normalize_lightning_address(data.lightning_address)
 
     doc = {
-        "name": data.name,
-        "email": data.email,
+        "name":            data.name,
+        "email":           data.email,
         "hashed_password": hash_password(data.password),
-        "role": data.role.value,
-        "is_active": True,
-        "created_at": utcnow().isoformat(),
+        "role":            data.role.value,
+        "is_active":       True,
+        "created_at":      utcnow().isoformat(),
     }
     if data.role.value == "seller":
         doc["store_name"] = data.store_name or f"{data.name}'s Store"
         if not lightning_address:
             raise HTTPException(status_code=400, detail="Seller accounts require a Lightning Address")
         doc["lightning_address"] = lightning_address
+        if data.lnbits_invoice_key:
+            doc["lnbits_invoice_key"] = data.lnbits_invoice_key.strip()
     elif lightning_address:
         doc["lightning_address"] = lightning_address
 
     user_id = db_insert("users", doc)
-    token = create_access_token({"sub": user_id})
-    safe = {k: v for k, v in doc.items() if k != "hashed_password"}
+    token   = create_access_token({"sub": user_id})
+    safe    = {k: v for k, v in doc.items() if k != "hashed_password"}
     return {"access_token": token, "token_type": "bearer", "user": safe}
 
 
@@ -63,7 +78,7 @@ async def login_user(data: UserLoginRequest, db) -> dict:
         raise HTTPException(status_code=403, detail="Account has been deactivated")
 
     token = create_access_token({"sub": user["id"]})
-    safe = {k: v for k, v in user.items() if k != "hashed_password"}
+    safe  = {k: v for k, v in user.items() if k != "hashed_password"}
     return {"access_token": token, "token_type": "bearer", "user": safe}
 
 
@@ -84,7 +99,7 @@ async def toggle_user_status(user_id: str, db) -> dict:
     new_status = not user.get("is_active", True)
     db_update("users", user_id, {"is_active": new_status})
     return {
-        "message": f"User {'activated' if new_status else 'banned'}",
+        "message":   f"User {'activated' if new_status else 'banned'}",
         "is_active": new_status,
     }
 
@@ -110,3 +125,4 @@ async def update_user_profile(user_id: str, updates: dict, db) -> dict:
     if not updated:
         raise HTTPException(status_code=500, detail="Could not update user")
     return {k: v for k, v in updated.items() if k != "hashed_password"}
+
