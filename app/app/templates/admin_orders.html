@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Admin — Orders{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-sidebar__label">Admin Panel</div>
+    <a href="/admin"          class="dash-link">📊 Overview</a>
+    <a href="/admin/users"    class="dash-link">👥 Users</a>
+    <a href="/admin/products" class="dash-link">📦 Products</a>
+    <a href="/admin/orders"   class="dash-link active">🛒 Orders</a>
+    <hr style="margin:12px 20px;border-color:var(--border)">
+    <a href="/products" class="dash-link">🌐 Marketplace</a>
+  </aside>
+  <main class="dash-main">
+    <div class="section-header">
+      <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">All orders</h1>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="filterPay('',this)">All</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterPay('paid',this)">Paid</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterPay('awaiting_payment',this)">Pending</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterPay('failed',this)">Failed</button>
+      </div>
+    </div>
+    <div id="orders-wrap">
+      <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+if (!auth.isLoggedIn() || auth.user?.role !== 'admin') window.location.href = '/login';
+
+let currentFilter = '';
+
+function filterPay(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.dash-main .btn-ghost, .dash-main .btn-primary').forEach(b => {
+    b.classList.remove('btn-primary'); b.classList.add('btn-ghost');
+  });
+  if (btn) { btn.classList.remove('btn-ghost'); btn.classList.add('btn-primary'); }
+  loadOrders();
+}
+
+async function loadOrders() {
+  const wrap = document.getElementById('orders-wrap');
+  wrap.innerHTML = '<div style="text-align:center;padding:24px"><div class="spinner"></div></div>';
+  try {
+    const qs = currentFilter ? `?payment_status=${currentFilter}` : '';
+    const data = await apiFetch('/admin/orders' + qs);
+    if (!data.orders.length) {
+      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">🛒</div><p>No orders found.</p></div>';
+      return;
+    }
+    wrap.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Order ID</th><th>Buyer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody>
+            ${data.orders.map(o => `
+              <tr>
+                <td><span class="mono text-sm" style="color:var(--text-3)">#${o.id.slice(-8).toUpperCase()}</span></td>
+                <td class="text-sm">${o.buyer_name || '—'}<br><span class="text-muted" style="font-size:0.75rem">${o.buyer_email || ''}</span></td>
+                <td class="text-muted text-sm">${o.items?.length || 0} item(s)</td>
+                <td><span class="mono text-sm text-orange">⚡ ${o.total_sats.toLocaleString()}</span></td>
+                <td>${statusPill(o.payment_status)}</td>
+                <td>${statusPill(o.order_status)}</td>
+                <td class="text-muted text-sm">${new Date(o.created_at).toLocaleDateString()}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted text-sm" style="margin-top:12px">${data.total} order(s) total</p>
+    `;
+  } catch(e) {
+    wrap.innerHTML = '<div class="alert alert-error">' + e.message + '</div>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadOrders);
+</script>
+{% endblock %}

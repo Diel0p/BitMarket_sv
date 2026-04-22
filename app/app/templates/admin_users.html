@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Admin — Users{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-sidebar__label">Admin Panel</div>
+    <a href="/admin"          class="dash-link">📊 Overview</a>
+    <a href="/admin/users"    class="dash-link active">👥 Users</a>
+    <a href="/admin/products" class="dash-link">📦 Products</a>
+    <a href="/admin/orders"   class="dash-link">🛒 Orders</a>
+    <hr style="margin:12px 20px;border-color:var(--border)">
+    <a href="/products" class="dash-link">🌐 Marketplace</a>
+  </aside>
+  <main class="dash-main">
+    <div class="section-header">
+      <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">Users</h1>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="filterRole('',this)">All</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterRole('buyer',this)">Buyers</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterRole('seller',this)">Sellers</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterRole('admin',this)">Admins</button>
+      </div>
+    </div>
+    <div id="users-wrap">
+      <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+if (!auth.isLoggedIn() || auth.user?.role !== 'admin') window.location.href = '/login';
+
+let currentRole = '';
+
+function filterRole(role, btn) {
+  currentRole = role;
+  document.querySelectorAll('.dash-main .btn-ghost').forEach(b => b.classList.remove('btn-primary'));
+  if (btn) btn.classList.add('btn-primary');
+  loadUsers();
+}
+
+async function loadUsers() {
+  const wrap = document.getElementById('users-wrap');
+  wrap.innerHTML = '<div style="text-align:center;padding:24px"><div class="spinner"></div></div>';
+  try {
+    const qs = currentRole ? `?role=${currentRole}` : '';
+    const data = await apiFetch('/admin/users' + qs);
+    if (!data.users.length) {
+      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">👥</div><p>No users found.</p></div>';
+      return;
+    }
+    wrap.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody>
+            ${data.users.map(u => `
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div style="width:30px;height:30px;border-radius:50%;background:var(--orange-glow);border:1px solid rgba(247,147,26,0.3);color:var(--orange);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.8rem;flex-shrink:0">${u.name[0].toUpperCase()}</div>
+                    <span style="font-weight:500;font-size:0.875rem">${u.name}</span>
+                  </div>
+                </td>
+                <td class="mono text-sm" style="color:var(--text-2)">${u.email}</td>
+                <td><span class="navbar__role-badge badge-${u.role}">${u.role}</span></td>
+                <td class="text-muted text-sm">${new Date(u.created_at).toLocaleDateString()}</td>
+                <td>${u.is_active ? '<span class="pill pill-active">Active</span>' : '<span class="pill pill-failed">Banned</span>'}</td>
+                <td>
+                  ${u.role !== 'admin' ? `
+                    <button class="btn btn-sm ${u.is_active ? 'btn-danger' : 'btn-ghost'}" onclick="toggleUser('${u.id}')">
+                      ${u.is_active ? 'Ban' : 'Unban'}
+                    </button>
+                  ` : '<span class="text-muted text-sm">—</span>'}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted text-sm" style="margin-top:12px">${data.total} user(s) total</p>
+    `;
+  } catch(e) {
+    wrap.innerHTML = '<div class="alert alert-error">' + e.message + '</div>';
+  }
+}
+
+async function toggleUser(id) {
+  try {
+    await apiFetch(`/admin/users/${id}/status`, { method: 'PATCH' });
+    loadUsers();
+  } catch(e) { alert(e.message); }
+}
+
+document.addEventListener('DOMContentLoaded', loadUsers);
+</script>
+{% endblock %}

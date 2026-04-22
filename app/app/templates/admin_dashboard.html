@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  <aside class="dash-sidebar">
+    <div class="dash-sidebar__label">Admin Panel</div>
+    <a href="/admin"          class="dash-link active">📊 Overview</a>
+    <a href="/admin/users"    class="dash-link">👥 Users</a>
+    <a href="/admin/products" class="dash-link">📦 Products</a>
+    <a href="/admin/orders"   class="dash-link">🛒 Orders</a>
+    <hr style="margin:12px 20px;border-color:var(--border)">
+    <a href="/products" class="dash-link">🌐 Marketplace</a>
+  </aside>
+  <main class="dash-main">
+    <div style="margin-bottom:28px">
+      <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">Admin Dashboard</h1>
+      <p class="text-muted text-sm">Marketplace overview and moderation</p>
+    </div>
+
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><p class="stat-card__label">Total users</p><p class="stat-card__val" id="st-users">—</p></div>
+      <div class="stat-card"><p class="stat-card__label">Active products</p><p class="stat-card__val" id="st-products">—</p></div>
+      <div class="stat-card"><p class="stat-card__label">Total orders</p><p class="stat-card__val" id="st-orders">—</p></div>
+      <div class="stat-card"><p class="stat-card__label">Paid orders</p><p class="stat-card__val" style="color:var(--success)" id="st-paid">—</p></div>
+      <div class="stat-card" style="grid-column:span 2">
+        <p class="stat-card__label">Total revenue</p>
+        <p class="stat-card__val orange" id="st-revenue">⚡ —</p>
+        <p class="mono text-sm" style="color:var(--text-3);margin-top:4px" id="st-btc"></p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-card__label">Platform fee (admin)</p>
+        <p class="stat-card__val" id="st-platform-fee">⚡ —</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-card__label">Seller net total</p>
+        <p class="stat-card__val" id="st-seller-net">⚡ —</p>
+      </div>
+    </div>
+
+    <div style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap">
+      <a href="/admin/users"    class="btn btn-ghost">👥 Manage users</a>
+      <a href="/admin/products" class="btn btn-ghost">📦 Moderate products</a>
+      <a href="/admin/orders"   class="btn btn-ghost">🛒 View all orders</a>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+if (!auth.isLoggedIn() || auth.user?.role !== 'admin') window.location.href = '/login';
+
+async function loadStats() {
+  try {
+    const data = await apiFetch('/admin/stats');
+    const s = data.stats;
+    document.getElementById('st-users').textContent    = s.total_users;
+    document.getElementById('st-products').textContent = s.total_products;
+    document.getElementById('st-orders').textContent   = s.total_orders;
+    document.getElementById('st-paid').textContent     = s.total_paid_orders;
+    document.getElementById('st-revenue').textContent  = '⚡ ' + s.total_revenue_sats.toLocaleString() + ' sats';
+    document.getElementById('st-btc').textContent      = s.total_revenue_btc + ' BTC';
+    document.getElementById('st-platform-fee').textContent = '⚡ ' + (s.platform_revenue_sats || 0).toLocaleString() + ' sats';
+    document.getElementById('st-seller-net').textContent = '⚡ ' + (s.seller_net_total_sats || 0).toLocaleString() + ' sats';
+  } catch(e) {}
+}
+document.addEventListener('DOMContentLoaded', loadStats);
+</script>
+{% endblock %}
