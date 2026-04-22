@@ -38,6 +38,7 @@ async def _process_seller_payouts(order: dict, db) -> dict:
     existing_payouts = order.get("payouts") or []
     existing_commission = order.get("commission_payout")
     if existing_payouts:
+        # Make payout handling idempotent: if already processed, reuse stored outcome.
         statuses = {p.get("status") for p in existing_payouts}
         commission_status = (existing_commission or {}).get("status")
         if statuses == {"paid"}:
@@ -87,6 +88,7 @@ async def _process_seller_payouts(order: dict, db) -> dict:
         }
 
         if not seller or not seller.get("lightning_address"):
+            # Record failure per seller instead of aborting the whole order settlement.
             payout_record["status"] = "failed"
             payout_record["error"] = "Seller does not have a Lightning Address configured"
             payouts.append(payout_record)
@@ -176,6 +178,7 @@ async def create_order(data: OrderCreateRequest, buyer_id: str, db) -> dict:
     total_sats  = 0
 
     for item in data.items:
+        # Re-read product state at checkout time; never trust client-side stock/price snapshots.
         product = db_find_one("products", id=item.product_id)
         if not product or product.get("status") != "active":
             raise HTTPException(
@@ -247,6 +250,7 @@ async def create_order(data: OrderCreateRequest, buyer_id: str, db) -> dict:
     db_insert("invoices", invoice_doc)
 
     # Decrement stock
+    # Reserve stock only after order+invoice are persisted to keep audit traceability.
     for item in order_items:
         product = db_find_one("products", id=item["product_id"])
         if product:
@@ -279,6 +283,7 @@ async def check_and_confirm_payment(payment_hash: str, db) -> dict:
         raise HTTPException(status_code=404, detail="Invoice not found")
 
     if invoice.get("status") == "paid":
+        # Fast path for repeated polls: return cached paid state without side effects.
         order = db_find_one("orders", invoice_id=payment_hash)
         return {
             "payment_hash": payment_hash,
@@ -294,6 +299,7 @@ async def check_and_confirm_payment(payment_hash: str, db) -> dict:
     result = await payment_service.check_invoice_status(payment_hash)
 
     if result["paid"]:
+        # Persist payment confirmation before triggering payouts to avoid double processing.
         settled_at = result.get("settled_at") or utcnow()
         settled_str = settled_at.isoformat() if hasattr(settled_at, "isoformat") else str(settled_at)
 

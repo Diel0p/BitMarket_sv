@@ -21,6 +21,7 @@ bearer_scheme = HTTPBearer()
 # â”€â”€ Password helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def hash_password(password: str) -> str:
+    # Store only salted hashes; never persist or log plaintext passwords.
     return _bcrypt.hashpw(password.encode(), _bcrypt.gensalt()).decode()
 
 
@@ -34,6 +35,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 # â”€â”€ Token helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    # Embed expiration in token claims so revoked/expired tokens are rejected server-side.
     payload = data.copy()
     expire  = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.access_token_expire_minutes)
@@ -55,6 +57,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+        # Treat any JWT decode issue as unauthorized without leaking parse details.
         payload = jwt.decode(
             credentials.credentials,
             settings.secret_key,
@@ -83,6 +86,7 @@ def require_roles(*roles: UserRole):
         current_user: dict = Depends(require_roles("admin"))
     """
     async def guard(current_user: dict = Depends(get_current_user)) -> dict:
+        # Normalize enum/string role values once for robust comparisons.
         allowed = [r.value if hasattr(r, "value") else r for r in roles]
         if current_user.get("role") not in allowed:
             raise HTTPException(

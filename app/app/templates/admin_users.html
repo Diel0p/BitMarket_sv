@@ -16,6 +16,7 @@
     <div class="section-header">
       <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">Users</h1>
       <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="openCreateSuperModal()">+ Super usuario</button>
         <button class="btn btn-ghost btn-sm" onclick="filterRole('',this)">All</button>
         <button class="btn btn-ghost btn-sm" onclick="filterRole('buyer',this)">Buyers</button>
         <button class="btn btn-ghost btn-sm" onclick="filterRole('seller',this)">Sellers</button>
@@ -24,6 +25,74 @@
     </div>
     <div id="users-wrap">
       <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
+    </div>
+
+    <div id="user-detail-modal" class="modal-overlay" style="display:none" onclick="closeUserDetail(event)">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <div class="modal-head">
+          <h3 id="detail-name" style="margin:0;font-size:1.05rem">User details</h3>
+          <button class="btn btn-ghost btn-sm" onclick="closeUserDetail()">Close</button>
+        </div>
+        <div id="detail-body" class="detail-grid"></div>
+      </div>
+    </div>
+
+    <div id="create-super-modal" class="modal-overlay" style="display:none" onclick="closeCreateSuperModal(event)">
+      <div class="modal-card" onclick="event.stopPropagation()">
+        <div class="modal-head">
+          <h3 style="margin:0;font-size:1.05rem">Crear super usuario</h3>
+          <button class="btn btn-ghost btn-sm" onclick="closeCreateSuperModal()">Close</button>
+        </div>
+        <div style="padding:16px">
+          <div id="super-msg"></div>
+          <form id="super-form" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Nombre</label>
+              <input id="su-name" required minlength="2" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input id="su-email" type="email" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <input id="su-password" type="password" minlength="8" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Telefono</label>
+              <input id="su-phone" type="tel" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Departamento</label>
+              <select id="su-department">
+                <option value="">Seleccionar</option>
+                <option value="Ahuachapan">Ahuachapan</option>
+                <option value="Cabanas">Cabanas</option>
+                <option value="Chalatenango">Chalatenango</option>
+                <option value="Cuscatlan">Cuscatlan</option>
+                <option value="La Libertad">La Libertad</option>
+                <option value="La Paz">La Paz</option>
+                <option value="La Union">La Union</option>
+                <option value="Morazan">Morazan</option>
+                <option value="San Miguel">San Miguel</option>
+                <option value="San Salvador">San Salvador</option>
+                <option value="San Vicente">San Vicente</option>
+                <option value="Santa Ana">Santa Ana</option>
+                <option value="Sonsonate">Sonsonate</option>
+                <option value="Usulutan">Usulutan</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label">Direccion</label>
+              <input id="su-address" />
+            </div>
+            <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end">
+              <button type="button" class="btn btn-ghost" onclick="closeCreateSuperModal()">Cancelar</button>
+              <button type="submit" class="btn btn-primary" id="super-btn">Crear super usuario</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </main>
 </div>
@@ -34,6 +103,25 @@
 if (!auth.isLoggedIn() || auth.user?.role !== 'admin') window.location.href = '/login';
 
 let currentRole = '';
+let userIndex = {};
+
+function formatPhoneInput(value) {
+  const digits = (value || '').replace(/\D/g, '');
+  if (digits.startsWith('503') && digits.length > 8) {
+    const local = digits.slice(3, 11);
+    if (local.length <= 4) return `+503 ${local}`;
+    return `+503 ${local.slice(0, 4)}-${local.slice(4)}`;
+  }
+  const local = digits.slice(0, 8);
+  if (local.length <= 4) return local;
+  return `${local.slice(0, 4)}-${local.slice(4)}`;
+}
+
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m]));
+}
 
 function filterRole(role, btn) {
   currentRole = role;
@@ -48,6 +136,7 @@ async function loadUsers() {
   try {
     const qs = currentRole ? `?role=${currentRole}` : '';
     const data = await apiFetch('/admin/users' + qs);
+    userIndex = Object.fromEntries(data.users.map(u => [u.id, u]));
     if (!data.users.length) {
       wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">👥</div><p>No users found.</p></div>';
       return;
@@ -55,7 +144,7 @@ async function loadUsers() {
     wrap.innerHTML = `
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Status</th><th>Action</th></tr></thead>
+          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
             ${data.users.map(u => `
               <tr>
@@ -66,15 +155,19 @@ async function loadUsers() {
                   </div>
                 </td>
                 <td class="mono text-sm" style="color:var(--text-2)">${u.email}</td>
+                <td class="text-sm">${u.phone ? esc(u.phone) : '<span class="text-muted">—</span>'}</td>
                 <td><span class="navbar__role-badge badge-${u.role}">${u.role}</span></td>
                 <td class="text-muted text-sm">${new Date(u.created_at).toLocaleDateString()}</td>
                 <td>${u.is_active ? '<span class="pill pill-active">Active</span>' : '<span class="pill pill-failed">Banned</span>'}</td>
                 <td>
-                  ${u.role !== 'admin' ? `
-                    <button class="btn btn-sm ${u.is_active ? 'btn-danger' : 'btn-ghost'}" onclick="toggleUser('${u.id}')">
-                      ${u.is_active ? 'Ban' : 'Unban'}
-                    </button>
-                  ` : '<span class="text-muted text-sm">—</span>'}
+                  <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <button class="btn btn-ghost btn-sm" onclick="showUserDetail('${u.id}')">Ver mas</button>
+                    ${u.role !== 'admin' ? `
+                      <button class="btn btn-sm ${u.is_active ? 'btn-danger' : 'btn-ghost'}" onclick="toggleUser('${u.id}')">
+                        ${u.is_active ? 'Ban' : 'Unban'}
+                      </button>
+                    ` : ''}
+                  </div>
                 </td>
               </tr>
             `).join('')}
@@ -88,6 +181,84 @@ async function loadUsers() {
   }
 }
 
+function showUserDetail(id) {
+  const u = userIndex[id];
+  if (!u) return;
+  document.getElementById('detail-name').textContent = `Detalle de ${u.name}`;
+  document.getElementById('detail-body').innerHTML = `
+    <div><span class="detail-label">Nombre</span><span>${esc(u.name)}</span></div>
+    <div><span class="detail-label">Email</span><span class="mono">${esc(u.email)}</span></div>
+    <div><span class="detail-label">Rol</span><span>${esc(u.role)}</span></div>
+    <div><span class="detail-label">Telefono</span><span>${u.phone ? esc(u.phone) : '—'}</span></div>
+    <div><span class="detail-label">Direccion</span><span>${u.address ? esc(u.address) : '—'}</span></div>
+    <div><span class="detail-label">Departamento</span><span>${u.department ? esc(u.department) : '—'}</span></div>
+    <div><span class="detail-label">Tienda</span><span>${u.store_name ? esc(u.store_name) : '—'}</span></div>
+    <div><span class="detail-label">Lightning</span><span class="mono">${u.lightning_address ? esc(u.lightning_address) : '—'}</span></div>
+    <div><span class="detail-label">Estado</span><span>${u.is_active ? 'Activo' : 'Baneado'}</span></div>
+    <div><span class="detail-label">Creado</span><span>${u.created_at ? new Date(u.created_at).toLocaleString() : '—'}</span></div>
+  `;
+  document.getElementById('user-detail-modal').style.display = 'flex';
+}
+
+function closeUserDetail(event) {
+  if (event && event.target && event.target.closest('.modal-card')) return;
+  document.getElementById('user-detail-modal').style.display = 'none';
+}
+
+function openCreateSuperModal() {
+  clearMsg('super-msg');
+  document.getElementById('super-form').reset();
+  const phoneInput = document.getElementById('su-phone');
+  if (phoneInput) {
+    phoneInput.oninput = e => {
+      e.target.value = formatPhoneInput(e.target.value);
+    };
+  }
+  document.getElementById('create-super-modal').style.display = 'flex';
+}
+
+function closeCreateSuperModal(event) {
+  if (event && event.target && event.target.closest('.modal-card')) return;
+  document.getElementById('create-super-modal').style.display = 'none';
+}
+
+document.getElementById('super-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('super-btn');
+  btn.disabled = true;
+  btn.textContent = 'Creando...';
+  clearMsg('super-msg');
+  try {
+    const payload = {
+      name: document.getElementById('su-name').value,
+      email: document.getElementById('su-email').value,
+      password: document.getElementById('su-password').value,
+    };
+    const phone = document.getElementById('su-phone').value.trim();
+    const department = document.getElementById('su-department').value;
+    const address = document.getElementById('su-address').value.trim();
+    if (phone) payload.phone = phone;
+    if (department) payload.department = department;
+    if (address) payload.address = address;
+
+    await apiFetch('/admin/users/super', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    showSuccess('super-msg', 'Super usuario creado correctamente');
+    setTimeout(() => {
+      closeCreateSuperModal();
+      loadUsers();
+    }, 700);
+  } catch (e) {
+    showError('super-msg', e.message || 'No se pudo crear el super usuario');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Crear super usuario';
+  }
+});
+
 async function toggleUser(id) {
   try {
     await apiFetch(`/admin/users/${id}/status`, { method: 'PATCH' });
@@ -97,4 +268,53 @@ async function toggleUser(id) {
 
 document.addEventListener('DOMContentLoaded', loadUsers);
 </script>
+
+<style>
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 60;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-card {
+  width: min(760px, 100%);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 18px;
+  padding: 16px;
+}
+.detail-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.detail-label {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.modal-card .form-group { margin-bottom: 0; }
+@media (max-width: 760px) {
+  .detail-grid { grid-template-columns: 1fr; }
+}
+</style>
 {% endblock %}

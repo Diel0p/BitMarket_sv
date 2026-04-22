@@ -34,6 +34,7 @@ class OrderStatus(str, Enum):
 # ── Cart schemas ───────────────────────────────────────────
 
 class CartItemRequest(BaseModel):
+    # Quantity must be at least 1; stock checks happen later in the service layer.
     product_id: str
     quantity: int = Field(..., ge=1)
 
@@ -58,6 +59,7 @@ class ShippingAddress(BaseModel):
 
 
 class OrderCreateRequest(BaseModel):
+    # Force at least one item so empty checkout attempts fail at validation time.
     items: list[CartItemRequest] = Field(..., min_length=1)
     shipping_address: ShippingAddress
     notes: Optional[str] = None
@@ -89,5 +91,6 @@ class OrderResponse(BaseModel):
 
 
 class FulfillmentUpdateRequest(BaseModel):
+    # Item index is zero-based and validated to avoid negative array access.
     item_index: int = Field(..., ge=0)
     status: FulfillmentStatus

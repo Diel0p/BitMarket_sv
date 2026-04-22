@@ -51,6 +51,7 @@ async def create_invoice(amount_sats: int, memo: str, order_id: str) -> dict:
         is_mock          â€” True in mock mode (no real payment needed)
     """
     if settings.lnbits_mock_mode:
+        # In dev/mock mode we skip network I/O entirely for deterministic local flows.
         return _create_mock_invoice(amount_sats, memo)
     try:
         return await _create_lnbits_invoice(amount_sats, memo)
@@ -90,6 +91,7 @@ async def payout_to_lightning_address(
     memo: str,
     seller_invoice_key: str | None = None,
 ) -> dict:
+    # Validate monetary inputs at service boundaries to avoid invalid downstream calls.
     if amount_sats <= 0:
         raise HTTPException(status_code=400, detail="Payout amount must be greater than zero")
 
@@ -99,6 +101,7 @@ async def payout_to_lightning_address(
     # Wallet URL: use LNbits internal transfer via seller's invoice key
     if "/wallet/" in lightning_address.lower():
         if seller_invoice_key:
+            # Prefer internal LNbits transfer when we have seller invoice key (lower fees, fewer hops).
             return await _payout_to_lnbits_wallet(seller_invoice_key, amount_sats, memo)
         # No key available → degrade to mock so the order still completes
         logger.warning(
@@ -200,6 +203,7 @@ async def _resolve_lightning_address_invoice(
 ) -> str:
     destination = lightning_address.strip()
     if destination.startswith("http://") or destination.startswith("https://"):
+        # Accept only LNURLp-style URLs to prevent unsupported wallet endpoint formats.
         if not _LNURLP_URL_RE.match(destination):
             raise HTTPException(
                 status_code=400,
@@ -239,6 +243,7 @@ async def _resolve_lightning_address_invoice(
 
         min_sendable = int(lnurlp_data.get("minSendable", 0))
         max_sendable = int(lnurlp_data.get("maxSendable", 0))
+        # Respect receiver limits before requesting an invoice.
         if amount_msat < min_sendable or (max_sendable and amount_msat > max_sendable):
             raise HTTPException(status_code=400, detail="Seller Lightning Address does not accept this payout amount")
 
@@ -317,6 +322,7 @@ async def _payout_to_lnbits_wallet(
     Internal LNbits transfer: create an invoice on the seller's wallet
     using their invoice key, then pay it using the platform admin key.
     """
+    # Use seller key only for invoice creation; payment always uses platform admin credentials.
     seller_headers = {"X-Api-Key": seller_invoice_key, "Content-Type": "application/json"}
 
     async with httpx.AsyncClient(timeout=15.0) as client:

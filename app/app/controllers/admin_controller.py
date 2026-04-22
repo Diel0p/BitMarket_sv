@@ -9,6 +9,7 @@ from fastapi import Depends, Query
 
 from app.app.config.database import get_db
 from app.app.middleware.auth import get_admin
+from app.app.models.user import AdminCreateUserRequest
 from app.app.services import admin_service
 
 
@@ -24,7 +25,17 @@ async def list_users(
     current_user: dict = Depends(get_admin),
     db=Depends(get_db),
 ):
+    # Keep pagination bounded to protect query performance and response size.
     result = await admin_service.list_users(role, page, limit, db)
+    return {"success": True, **result}
+
+
+async def create_super_user(
+    data: AdminCreateUserRequest,
+    current_user: dict = Depends(get_admin),
+    db=Depends(get_db),
+):
+    result = await admin_service.create_super_user(data, db)
     return {"success": True, **result}
 
 
@@ -44,6 +55,7 @@ async def list_products(
     current_user: dict = Depends(get_admin),
     db=Depends(get_db),
 ):
+    # Optional status filter enables moderation views without exposing service internals.
     result = await admin_service.list_all_products(status, page, limit, db)
     return {"success": True, **result}
 

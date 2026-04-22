@@ -18,6 +18,7 @@ class ProductStatus(str, Enum):
 # ── Request schemas ────────────────────────────────────────
 
 class ProductCreateRequest(BaseModel):
+    # Validation limits keep listings consistent and prevent oversized payloads.
     title: str = Field(..., min_length=3, max_length=200)
     description: str = Field(..., min_length=10, max_length=5000)
     price_sats: int = Field(..., gt=0, description="Price in satoshis")
@@ -55,12 +56,14 @@ class ProductResponse(BaseModel):
     images: list[str] = []
     created_at: datetime
 
+    # Enables direct serialization from DB documents without manual mapping.
     model_config = {"from_attributes": True}
 
 
 # ── Filters ────────────────────────────────────────────────
 
 class ProductFilters(BaseModel):
+    # Hard limits on pagination and sort prevent abusive or unsupported queries.
     q: Optional[str] = None
     category: Optional[str] = None
     min_price: Optional[int] = Field(None, ge=0)

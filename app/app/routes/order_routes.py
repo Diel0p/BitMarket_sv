@@ -13,6 +13,7 @@ from app.app.controllers import order_controller
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
+# Keep order creation and payment polling close to preserve a clear checkout contract.
 router.post("",        summary="Create an order and generate a Lightning invoice")(order_controller.create_order)
 router.get("/mine",    summary="Get the authenticated buyer's orders")(order_controller.my_orders)
 router.get("/seller",  summary="Get orders containing the seller's products")(order_controller.seller_orders)

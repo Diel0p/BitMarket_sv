@@ -14,6 +14,7 @@ from app.app.controllers import product_controller
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
+# Declare static/specific paths before dynamic {product_id} to avoid route shadowing.
 router.get("",         summary="List products with optional search and filters")(product_controller.list_products)
 router.get("/mine",    summary="List authenticated seller's own products")(product_controller.my_products)
 router.post("/upload-image", summary="Upload a product image (seller only)")(product_controller.upload_product_image)

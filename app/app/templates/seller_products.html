@@ -17,15 +17,16 @@
         <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">My products</h1>
         <p class="text-muted text-sm" id="prod-count"></p>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="toggleForm()">+ New product</button>
+      <button class="btn btn-primary btn-sm" onclick="openCreateForm()">+ New product</button>
     </div>
 
     <!-- Create product form -->
     <div id="new-product-form" class="card" style="display:none;margin-bottom:24px">
       <div class="card-body">
-        <h3 class="card-title">Create new product</h3>
+        <h3 class="card-title" id="form-title">Create new product</h3>
         <div id="form-msg"></div>
         <form id="product-form">
+          <input id="p-id" type="hidden" />
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="form-group" style="grid-column:1/-1">
               <label class="form-label">Title *</label>
@@ -62,12 +63,13 @@
             <div class="form-group" style="grid-column:1/-1">
               <label class="form-label">Product image (optional)</label>
               <input id="p-image" type="file" accept="image/*" />
-              <p class="form-hint">JPG, PNG, WEBP o GIF. Max 5MB.</p>
+              <p class="form-hint">JPG, PNG, WEBP or GIF. Max 5MB.</p>
+              <p class="form-hint" id="current-image"></p>
             </div>
           </div>
           <div style="display:flex;gap:10px;margin-top:8px">
             <button type="submit" class="btn btn-primary" id="create-btn">Create product</button>
-            <button type="button" class="btn btn-ghost" onclick="toggleForm()">Cancel</button>
+            <button type="button" class="btn btn-ghost" onclick="closeForm()">Cancel</button>
           </div>
         </form>
       </div>
@@ -85,9 +87,22 @@
 <script>
 if (!auth.isLoggedIn() || auth.user?.role !== 'seller') window.location.href = '/login';
 
-function toggleForm() {
-  const f = document.getElementById('new-product-form');
-  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+function openCreateForm() {
+  resetProductForm();
+  document.getElementById('new-product-form').style.display = 'block';
+}
+
+function closeForm() {
+  document.getElementById('new-product-form').style.display = 'none';
+}
+
+function resetProductForm() {
+  document.getElementById('product-form').reset();
+  document.getElementById('p-id').value = '';
+  document.getElementById('form-title').textContent = 'Create new product';
+  document.getElementById('create-btn').textContent = 'Create product';
+  document.getElementById('current-image').textContent = '';
+  document.getElementById('btc-hint').textContent = '';
 }
 
 // Live BTC preview
@@ -105,6 +120,7 @@ async function loadMyProducts() {
   const wrap = document.getElementById('products-wrap');
   try {
     const data = await apiFetch('/products/mine');
+    window._productsById = Object.fromEntries(data.products.map(p => [p.id, p]));
     document.getElementById('prod-count').textContent = data.products.length + ' listings';
     if (!data.products.length) {
       wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📦</div><p>No products yet. Create your first listing!</p></div>';
@@ -125,6 +141,7 @@ async function loadMyProducts() {
                 <td>
                   <div style="display:flex;gap:6px">
                     <a href="/products/${p.id}" class="btn btn-ghost btn-sm">View</a>
+                    <button class="btn btn-primary btn-sm" onclick="editProduct('${p.id}')">Edit</button>
                     <button class="btn btn-danger btn-sm" onclick="removeProduct('${p.id}')">Remove</button>
                   </div>
                 </td>
@@ -137,6 +154,31 @@ async function loadMyProducts() {
   } catch(e) {
     wrap.innerHTML = '<div class="alert alert-error">Could not load products.</div>';
   }
+}
+
+function editProduct(id) {
+  const p = window._productsById?.[id];
+  if (!p) return;
+
+  document.getElementById('p-id').value = p.id;
+  document.getElementById('p-title').value = p.title || '';
+  document.getElementById('p-desc').value = p.description || '';
+  document.getElementById('p-price').value = p.price_sats || 0;
+  document.getElementById('p-stock').value = p.stock ?? 0;
+  document.getElementById('p-category').value = p.category || 'Other';
+  document.getElementById('p-tags').value = (p.tags || []).join(', ');
+  document.getElementById('form-title').textContent = 'Edit product';
+  document.getElementById('create-btn').textContent = 'Save changes';
+  document.getElementById('btc-hint').textContent = p.price_sats ? `≈ ${sats2btc(p.price_sats)} BTC` : '';
+
+  const currentImage = (p.images && p.images.length) ? p.images[0] : null;
+  const imageEl = document.getElementById('current-image');
+  imageEl.innerHTML = currentImage
+    ? `Current image: <a href="${currentImage}" target="_blank" rel="noopener">open</a> (upload a new one to replace)`
+    : 'No image uploaded yet.';
+
+  document.getElementById('new-product-form').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function uploadProductImageIfSelected() {
@@ -159,31 +201,51 @@ async function uploadProductImageIfSelected() {
 
 document.getElementById('product-form').addEventListener('submit', async e => {
   e.preventDefault();
+  const editingId = document.getElementById('p-id').value;
+  const isEdit = !!editingId;
   const btn = document.getElementById('create-btn');
-  btn.disabled = true; btn.textContent = 'Creating…';
+  btn.disabled = true; btn.textContent = isEdit ? 'Saving…' : 'Creating…';
   clearMsg('form-msg');
   try {
     const imageUrl = await uploadProductImageIfSelected();
     const tags = document.getElementById('p-tags').value
       .split(',').map(t => t.trim()).filter(Boolean);
-    await apiFetch('/products', {
-      method: 'POST',
-      body: JSON.stringify({
-        title: document.getElementById('p-title').value,
-        description: document.getElementById('p-desc').value,
-        price_sats: parseInt(document.getElementById('p-price').value),
-        stock: parseInt(document.getElementById('p-stock').value),
-        category: document.getElementById('p-category').value,
-        tags,
-        images: imageUrl ? [imageUrl] : [],
-      })
-    });
-    showSuccess('form-msg', '✓ Product created!');
-    document.getElementById('product-form').reset();
-    setTimeout(() => { toggleForm(); loadMyProducts(); }, 1000);
+    const payload = {
+      title: document.getElementById('p-title').value,
+      description: document.getElementById('p-desc').value,
+      price_sats: parseInt(document.getElementById('p-price').value),
+      stock: parseInt(document.getElementById('p-stock').value),
+      category: document.getElementById('p-category').value,
+      tags,
+    };
+
+    if (isEdit) {
+      if (imageUrl) payload.images = [imageUrl];
+      await apiFetch(`/products/${editingId}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
+      showSuccess('form-msg', '✓ Product updated!');
+    } else {
+      payload.images = imageUrl ? [imageUrl] : [];
+      await apiFetch('/products', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      showSuccess('form-msg', '✓ Product created!');
+    }
+
+    setTimeout(() => {
+      closeForm();
+      resetProductForm();
+      loadMyProducts();
+    }, 700);
   } catch(e) {
     showError('form-msg', e.message);
-  } finally { btn.disabled = false; btn.textContent = 'Create product'; }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = isEdit ? 'Save changes' : 'Create product';
+  }
 });
 
 async function removeProduct(id) {

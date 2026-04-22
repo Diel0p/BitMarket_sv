@@ -45,6 +45,7 @@ async def create_invoice(
         order_id=data.order_id,
     )
 
+    # Persist invoice metadata so status checks remain source-of-truth in our DB.
     db_insert("invoices", {
         "order_id":        data.order_id,
         "buyer_id":        current_user["id"],
@@ -91,6 +92,7 @@ async def lnbits_webhook(request: Request, db=Depends(get_db)):
     LNbits calls this when a payment settles. No auth required.
     """
     try:
+        # Webhook payloads are untrusted input: validate minimal required fields.
         body = await request.json()
         payment_hash = body.get("payment_hash")
         if not payment_hash:
@@ -113,6 +115,7 @@ async def qr_code(text: str):
     Returns an SVG QR image for checkout fallback when JS CDN fails.
     """
     payload = (text or "").strip()
+    # Guard resource usage for public endpoint returning dynamically generated SVG.
     if not payload:
         return JSONResponse(status_code=400, content={"error": "Missing text"})
     if len(payload) > 5000:

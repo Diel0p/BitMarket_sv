@@ -12,6 +12,7 @@ from app.app.controllers import auth_controller
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+# Keep auth surface minimal and explicit; token lifecycle starts at login/register.
 router.post("/register", summary="Register a new user account")(auth_controller.register)
 router.post("/login",    summary="Login and receive a JWT token")(auth_controller.login)
 router.get("/me",        summary="Get the currently authenticated user")(auth_controller.me)

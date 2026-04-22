@@ -25,6 +25,7 @@ router.get(
 router.post(
     "/webhook",
     summary="LNbits webhook â€” called automatically when a payment settles",
+    # Internal callback endpoint; hide from public API docs.
     include_in_schema=False,   # hide from public docs
 )(payment_controller.lnbits_webhook)
 
@@ -36,6 +37,7 @@ router.get(
 router.get(
     "/qr",
     summary="Render QR image for a BOLT11 invoice",
+    # UI fallback endpoint when client-side QR rendering is unavailable.
     include_in_schema=False,
 )(payment_controller.qr_code)
 

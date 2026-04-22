@@ -4,8 +4,10 @@ Admin Service â€” marketplace metrics, user and product moderation.
 
 from fastapi import HTTPException
 
-from app.app.config.database import db_find_all, db_find_one, db_update, db_count
-from app.app.utils.helpers import sats_to_btc
+from app.app.config.database import db_insert, db_find_all, db_find_one, db_update, db_count
+from app.app.middleware.auth import hash_password
+from app.app.models.user import AdminCreateUserRequest
+from app.app.utils.helpers import normalize_phone, sats_to_btc, utcnow
 
 
 async def get_marketplace_stats(db) -> dict:
@@ -40,6 +42,33 @@ async def list_users(role: str | None, page: int, limit: int, db) -> dict:
         "page":  page,
         "pages": max(1, -(-total // limit)),
     }
+
+
+async def create_super_user(data: AdminCreateUserRequest, db) -> dict:
+    if db_find_one("users", email=data.email):
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    doc = {
+        "name": data.name,
+        "email": data.email,
+        "hashed_password": hash_password(data.password),
+        "role": "admin",
+        "is_active": True,
+        "created_at": utcnow().isoformat(),
+    }
+    if data.phone:
+        try:
+            doc["phone"] = normalize_phone(data.phone)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if data.address:
+        doc["address"] = data.address.strip()
+    if data.department:
+        doc["department"] = data.department.strip()
+
+    user_id = db_insert("users", doc)
+    safe = {k: v for k, v in doc.items() if k != "hashed_password"}
+    return {"message": "Super admin created successfully", "user_id": user_id, "user": safe}
 
 
 async def toggle_user(user_id: str, db) -> dict:

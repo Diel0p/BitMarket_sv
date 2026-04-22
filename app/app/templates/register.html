@@ -24,8 +24,36 @@
           <input type="text" id="name" placeholder="Your name" required />
         </div>
         <div class="form-group">
+          <label class="form-label">Phone number</label>
+          <input type="tel" id="phone" placeholder="+503 7000-0000" minlength="8" required />
+        </div>
+        <div class="form-group">
           <label class="form-label">Email</label>
           <input type="email" id="email" placeholder="you@example.com" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Department (El Salvador)</label>
+          <select id="department" required>
+            <option value="">Select a department</option>
+            <option value="Ahuachapan">Ahuachapan</option>
+            <option value="Cabanas">Cabanas</option>
+            <option value="Chalatenango">Chalatenango</option>
+            <option value="Cuscatlan">Cuscatlan</option>
+            <option value="La Libertad">La Libertad</option>
+            <option value="La Paz">La Paz</option>
+            <option value="La Union">La Union</option>
+            <option value="Morazan">Morazan</option>
+            <option value="San Miguel">San Miguel</option>
+            <option value="San Salvador">San Salvador</option>
+            <option value="San Vicente">San Vicente</option>
+            <option value="Santa Ana">Santa Ana</option>
+            <option value="Sonsonate">Sonsonate</option>
+            <option value="Usulutan">Usulutan</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Address</label>
+          <input type="text" id="address" placeholder="Street, house number, reference" minlength="5" required />
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
@@ -36,9 +64,14 @@
           <input type="text" id="store-name" placeholder="Your awesome store" />
         </div>
         <div class="form-group" id="lightning-group" style="display:none">
-          <label class="form-label">Lightning Address</label>
-          <input type="text" id="lightning-address" placeholder="seller@yourdomain.com" />
-          <p class="form-hint">Required for sellers so the platform can send payouts automatically.</p>
+          <label class="form-label">Lightning Address o URL de wallet LNbits</label>
+          <input type="text" id="lightning-address" placeholder="seller@dominio.com  o  http://IP:5000/wallet/ID" />
+          <p class="form-hint">Direccion a la que se enviaran tus pagos. Acepta Lightning Address, LNURLp o la URL de tu wallet LNbits.</p>
+        </div>
+        <div class="form-group" id="invoice-key-group" style="display:none">
+          <label class="form-label">Invoice Key de tu wallet LNbits <span style="color:var(--text-3);font-weight:400">(opcional)</span></label>
+          <input type="text" id="lnbits-invoice-key" placeholder="Pega aqui tu Invoice/Read key de LNbits" autocomplete="off" />
+          <p class="form-hint">Solo si usas una wallet LNbits como destino. Con esta clave el sistema puede transferirte internamente sin comisiones de red.</p>
         </div>
         <button type="submit" class="btn btn-primary btn-full" id="submit-btn">Create account</button>
       </form>
@@ -57,12 +90,33 @@
 const urlRole = new URLSearchParams(location.search).get('role');
 if (urlRole) setRole(urlRole, document.querySelector(`[data-role="${urlRole}"]`));
 
+function formatPhoneInput(value) {
+  const digits = (value || '').replace(/\D/g, '');
+  if (digits.startsWith('503') && digits.length > 8) {
+    const local = digits.slice(3, 11);
+    if (local.length <= 4) return `+503 ${local}`;
+    return `+503 ${local.slice(0, 4)}-${local.slice(4)}`;
+  }
+  const local = digits.slice(0, 8);
+  if (local.length <= 4) return local;
+  return `${local.slice(0, 4)}-${local.slice(4)}`;
+}
+
+const phoneInput = document.getElementById('phone');
+if (phoneInput) {
+  phoneInput.addEventListener('input', e => {
+    e.target.value = formatPhoneInput(e.target.value);
+  });
+}
+
 function setRole(role, btn) {
   document.getElementById('role-input').value = role;
   document.querySelectorAll('.role-tab').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  document.getElementById('store-group').style.display = role === 'seller' ? 'block' : 'none';
-  document.getElementById('lightning-group').style.display = role === 'seller' ? 'block' : 'none';
+  const isSeller = role === 'seller';
+  document.getElementById('store-group').style.display       = isSeller ? 'block' : 'none';
+  document.getElementById('lightning-group').style.display   = isSeller ? 'block' : 'none';
+  document.getElementById('invoice-key-group').style.display = isSeller ? 'block' : 'none';
 }
 
 document.getElementById('register-form').addEventListener('submit', async e => {
@@ -75,7 +129,10 @@ document.getElementById('register-form').addEventListener('submit', async e => {
   try {
     const payload = {
       name: document.getElementById('name').value,
+      phone: document.getElementById('phone').value,
       email: document.getElementById('email').value,
+      department: document.getElementById('department').value,
+      address: document.getElementById('address').value,
       password: document.getElementById('password').value,
       role: document.getElementById('role-input').value,
     };
@@ -83,6 +140,8 @@ document.getElementById('register-form').addEventListener('submit', async e => {
     if (sn) payload.store_name = sn;
     const lightningAddress = document.getElementById('lightning-address').value.trim();
     if (lightningAddress) payload.lightning_address = lightningAddress;
+    const invoiceKey = document.getElementById('lnbits-invoice-key').value.trim();
+    if (invoiceKey) payload.lnbits_invoice_key = invoiceKey;
 
     const data = await apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(payload) });
     auth.set(data.access_token, data.user);

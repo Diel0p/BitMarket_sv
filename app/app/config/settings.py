@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     # Mock invoices auto-confirm after MOCK_CONFIRM_SECONDS seconds.
     lnbits_url: str = ""
     lnbits_admin_key: str = ""
+    platform_commission_lightning_address: str = ""
     invoice_expire_seconds: int = 600
     mock_confirm_seconds: int = 10  # seconds until mock payment confirms
     marketplace_fee_percent: float = 5.0

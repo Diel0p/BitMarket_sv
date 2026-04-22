@@ -36,6 +36,7 @@ async def create_product(
     current_user: dict = Depends(get_seller),
     db=Depends(get_db),
 ):
+    # Seller identity must come from auth context to prevent cross-account creation.
     product = await product_service.create_product(data, current_user["id"], db)
     return JSONResponse(status_code=201, content={"success": True, "product": product})
 
@@ -63,6 +64,7 @@ async def delete_product(
     current_user: dict = Depends(get_current_user),
     db=Depends(get_db),
 ):
+    # Service enforces role/ownership rules; controller keeps HTTP translation only.
     result = await product_service.delete_product(
         product_id, current_user["id"], current_user["role"], db
     )
@@ -73,6 +75,7 @@ async def upload_product_image(
     image: UploadFile = File(...),
     current_user: dict = Depends(get_seller),
 ):
+    # Validate extension before saving to reduce risk of unsupported/unexpected files.
     if not image.filename:
         raise HTTPException(status_code=400, detail="Image filename is required")
 
@@ -85,6 +88,7 @@ async def upload_product_image(
     file_path = _UPLOAD_DIR / filename
 
     raw = await image.read()
+    # Hard size cap protects memory and disk from oversized uploads.
     if len(raw) > 5 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Image too large (max 5MB)")
 

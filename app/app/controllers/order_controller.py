@@ -22,6 +22,7 @@ async def create_order(
     POST /orders
     Creates an order and returns a Lightning invoice for payment.
     """
+    # Buyer identity comes from token context, never from request body.
     result = await order_service.create_order(data, current_user["id"], db)
     return JSONResponse(status_code=201, content={"success": True, **result})
 
@@ -61,6 +62,7 @@ async def payment_status(
     GET /orders/payment-status/{payment_hash}
     Poll this endpoint to check if a Lightning invoice was paid.
     """
+    # Endpoint is intentionally side-effect aware: it confirms and persists paid state when detected.
     result = await order_service.check_and_confirm_payment(payment_hash, db)
     return {"success": True, **result}
 

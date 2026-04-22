@@ -12,7 +12,7 @@ from app.app.config.database import (
 )
 from app.app.middleware.auth import hash_password, verify_password, create_access_token
 from app.app.models.user import UserRegisterRequest, UserLoginRequest
-from app.app.utils.helpers import utcnow
+from app.app.utils.helpers import normalize_phone, utcnow
 
 
 _LIGHTNING_ADDRESS_RE = re.compile(r"^[a-z0-9._-]+@[a-z0-9.-]+\.[a-z]{2,}$", re.IGNORECASE)
@@ -23,6 +23,7 @@ _LNURLP_URL_RE = re.compile(
 
 
 def _normalize_lightning_address(value: str | None) -> str | None:
+    # Normalize once at the boundary so the rest of the service can assume a consistent format.
     if value is None:
         return None
     normalized = value.strip()
@@ -41,6 +42,10 @@ def _normalize_lightning_address(value: str | None) -> str | None:
 
 
 async def register_user(data: UserRegisterRequest, db) -> dict:
+    if data.role.value == "admin":
+        raise HTTPException(status_code=403, detail="Admin accounts can only be created from the admin panel")
+
+    # Enforce unique identity early to fail fast and avoid creating partial user records.
     if db_find_one("users", email=data.email):
         raise HTTPException(status_code=409, detail="Email already registered")
 
@@ -54,7 +59,17 @@ async def register_user(data: UserRegisterRequest, db) -> dict:
         "is_active":       True,
         "created_at":      utcnow().isoformat(),
     }
+    if data.phone:
+        try:
+            doc["phone"] = normalize_phone(data.phone)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if data.address:
+        doc["address"] = data.address.strip()
+    if data.department:
+        doc["department"] = data.department.strip()
     if data.role.value == "seller":
+        # Seller accounts must always have payout info to prevent unpayable orders later.
         doc["store_name"] = data.store_name or f"{data.name}'s Store"
         if not lightning_address:
             raise HTTPException(status_code=400, detail="Seller accounts require a Lightning Address")
@@ -66,12 +81,14 @@ async def register_user(data: UserRegisterRequest, db) -> dict:
 
     user_id = db_insert("users", doc)
     token   = create_access_token({"sub": user_id})
+    # Never return credential material to clients.
     safe    = {k: v for k, v in doc.items() if k != "hashed_password"}
     return {"access_token": token, "token_type": "bearer", "user": safe}
 
 
 async def login_user(data: UserLoginRequest, db) -> dict:
     user = db_find_one("users", email=data.email)
+    # Use a generic auth error to avoid leaking whether an email exists.
     if not user or not verify_password(data.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     if not user.get("is_active", True):
@@ -110,15 +127,23 @@ async def update_user_profile(user_id: str, updates: dict, db) -> dict:
         raise HTTPException(status_code=404, detail="User not found")
 
     normalized_updates = dict(updates)
+    if "phone" in normalized_updates:
+        try:
+            normalized_updates["phone"] = normalize_phone(normalized_updates.get("phone"))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     if "lightning_address" in normalized_updates:
         normalized_updates["lightning_address"] = _normalize_lightning_address(
             normalized_updates.get("lightning_address")
         )
 
     if user.get("role") == "seller":
+        # Keep seller payout destination mandatory after profile edits as well.
         if "lightning_address" in normalized_updates and not normalized_updates["lightning_address"]:
             raise HTTPException(status_code=400, detail="Seller accounts require a Lightning Address")
     else:
+        # Prevent buyers/admins from mutating seller-only profile fields.
         normalized_updates.pop("store_name", None)
 
     updated = db_update("users", user_id, normalized_updates)
