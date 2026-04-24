@@ -15,7 +15,7 @@ HTTP Request
  [Services]        business logic, validation, orchestration
      │
      ▼
- [Database]        in-memory dict store (swap to MongoDB/Postgres later)
+ [Database]        SQLite-backed document store (JSON docs in SQLite tables)
 ```
 
 ## Layer responsibilities
@@ -36,7 +36,7 @@ Pydantic v2 schemas for request validation and response serialization.
 Auto-documented via FastAPI's OpenAPI integration.
 
 **Database** (`src/app/config/database.py`)
-Currently in-memory (`dict`). All DB access goes through four helpers:
+Currently SQLite-backed (`app/data/bitmarket.db`). Documents are stored as JSON inside SQLite tables. All DB access goes through four helpers:
 `db_insert`, `db_find_one`, `db_find_all`, `db_update`.
 Swapping to MongoDB only requires replacing these four functions.
 
@@ -64,11 +64,12 @@ get_seller = require_roles(UserRole.SELLER)
 get_admin  = require_roles(UserRole.ADMIN)
 ```
 
-## Why in-memory instead of MongoDB
+## Why SQLite instead of MongoDB
 
-MongoDB was replaced with in-memory storage for this MVP:
+MongoDB was replaced with a SQLite-backed document store for this MVP:
 - Zero external dependencies — no install, no config, no connection errors
-- Identical dict-based API — trivial to swap back to Motor
+- NoSQL-style API (`db_insert`, `db_find_one`, etc.) — trivial to swap to Motor
+- Data persists across restarts (stored in `app/data/bitmarket.db`)
 - Sufficient for demo and evaluation
 
 To restore MongoDB: replace the four `db_*` helpers in `database.py`
@@ -78,7 +79,7 @@ with Motor calls. Services and controllers stay unchanged.
 
 | Step | Action |
 |------|--------|
-| 1 | Replace in-memory DB with MongoDB Motor — only `database.py` changes |
+| 1 | Replace SQLite DB with MongoDB Motor — only `database.py` changes |
 | 2 | Add Redis for rate limiting and session caching |
 | 3 | Replace LNbits with per-seller split-payment provider |
 | 4 | Extract payment service into standalone microservice |

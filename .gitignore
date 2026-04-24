@@ -24,10 +24,7 @@ ENV/
 # ── Database ──────────────────────────────────────────────
 *.db
 *.sqlite3
-
-# ── Uploads ───────────────────────────────────────────────
-uploads/*
-!uploads/.gitkeep
+!app/data/bitmarket.db
 
 # ── Testing ───────────────────────────────────────────────
 .pytest_cache/
