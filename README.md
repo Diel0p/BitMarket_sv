@@ -61,6 +61,77 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+## 💻 Comandos (PowerShell - Windows)
+
+```powershell
+# 1) Ir a la raiz del proyecto
+cd c:\Users\cruzz\Documents\BitMarket_sv_split
+
+# 2) Crear y activar entorno virtual
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# 3) Instalar dependencias
+pip install -r requirements.txt
+
+# 4) Crear .env desde ejemplo (si no existe)
+Copy-Item .env.example .env
+
+# 5) (Opcional) cargar datos demo
+python app\seed.py
+
+# 6) Ejecutar API/UI
+uvicorn app.main:app --reload
+```
+
+## 🐧 Comandos (Linux / macOS)
+
+```bash
+# 1) Ir a la raiz del proyecto
+cd /ruta/a/BitMarket_sv_split
+
+# 2) Crear y activar entorno virtual
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 3) Instalar dependencias
+pip install -r requirements.txt
+
+# 4) Crear .env desde ejemplo (si no existe)
+cp .env.example .env
+
+# 5) (Opcional) cargar datos demo
+python app/seed.py
+
+# 6) Ejecutar API/UI
+uvicorn app.main:app --reload
+```
+
+## 🪟 Comandos (CMD - Windows)
+
+```bat
+REM 1) Ir a la raiz del proyecto
+cd /d c:\Users\cruzz\Documents\BitMarket_sv_split
+
+REM 2) Crear y activar entorno virtual
+python -m venv .venv
+.venv\Scripts\activate.bat
+
+REM 3) Instalar dependencias
+pip install -r requirements.txt
+
+REM 4) Crear .env desde ejemplo (si no existe)
+copy .env.example .env
+
+REM 5) (Opcional) cargar datos demo
+python app\seed.py
+
+REM 6) Ejecutar API/UI
+uvicorn app.main:app --reload
+```
+
+Nota: la comision de plataforma por defecto esta configurada en `MARKETPLACE_FEE_PERCENT=5`.
+
 ## ⚙️ Configuracion De Entorno
 
 1. Crea el archivo .env desde .env.example.
@@ -98,6 +169,26 @@ Usuarios demo generados por seed:
 - admin@bitmarket.sv
 - seller@bitmarket.sv
 - buyer@bitmarket.sv
+
+## 📦 Contenido Demo Versionado (GitHub)
+
+Para facilitar que otra persona ejecute el sistema sin pasos extra, este repo puede incluir:
+
+- Base de datos SQLite con datos demo: `app/data/bitmarket.db`
+- Imagenes de productos: `app/app/static/uploads/products/`
+
+Notas:
+
+- `.env` sigue excluido por seguridad.
+- Usa `.env.example` como plantilla para entorno local.
+
+Pasos sugeridos para publicar en GitHub:
+
+```bash
+git add .
+git commit -m "chore: include demo db and product images for easier local setup"
+git push origin <tu-rama>
+```
 
 ## 🧪 Tests
 
