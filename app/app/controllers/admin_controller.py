@@ -6,11 +6,16 @@ Marketplace moderation and metrics. Admin-only endpoints.
 
 from typing import Optional
 from fastapi import Depends, Query
+from pydantic import BaseModel
 
 from app.app.config.database import get_db
 from app.app.middleware.auth import get_admin
 from app.app.models.user import AdminCreateUserRequest
 from app.app.services import admin_service
+
+
+class _ProductStatusBody(BaseModel):
+    status: str
 
 
 async def stats(current_user: dict = Depends(get_admin), db=Depends(get_db)):
@@ -62,11 +67,11 @@ async def list_products(
 
 async def set_product_status(
     product_id: str,
-    status: str,
+    body: _ProductStatusBody,
     current_user: dict = Depends(get_admin),
     db=Depends(get_db),
 ):
-    result = await admin_service.update_product_status(product_id, status, db)
+    result = await admin_service.update_product_status(product_id, body.status, db)
     return {"success": True, **result}
 
 

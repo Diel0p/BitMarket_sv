@@ -142,7 +142,10 @@ async function loadMyProducts() {
                   <div style="display:flex;gap:6px">
                     <a href="/products/${p.id}" class="btn btn-ghost btn-sm">View</a>
                     <button class="btn btn-primary btn-sm" onclick="editProduct('${p.id}')">Edit</button>
-                    <button class="btn btn-danger btn-sm" onclick="removeProduct('${p.id}')">Remove</button>
+                    ${p.status === 'active'
+                      ? `<button class="btn btn-danger btn-sm" onclick="toggleProductStatus('${p.id}','inactive')">Deactivate</button>`
+                      : `<button class="btn btn-outline btn-sm" onclick="toggleProductStatus('${p.id}','active')">Activate</button>`
+                    }
                   </div>
                 </td>
               </tr>
@@ -248,10 +251,14 @@ document.getElementById('product-form').addEventListener('submit', async e => {
   }
 });
 
-async function removeProduct(id) {
-  if (!confirm('Deactivate this product?')) return;
+async function toggleProductStatus(id, newStatus) {
+  const label = newStatus === 'inactive' ? 'Deactivate' : 'Activate';
+  if (!confirm(`${label} this product?`)) return;
   try {
-    await apiFetch(`/products/${id}`, { method: 'DELETE' });
+    await apiFetch(`/products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: newStatus })
+    });
     loadMyProducts();
   } catch(e) { alert(e.message); }
 }
