@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
   Port      : {settings.app_port}
   UI        : http://localhost:{settings.app_port}/
   API docs  : http://localhost:{settings.app_port}/docs
-    Database  : SQLite document store
+    Database  : PostgreSQL document store
   Payments  : {"ðŸŸ¡ Mock mode (auto-confirms in 10s)" if settings.lnbits_mock_mode else "ðŸŸ¢ LNbits live"}
   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Seed demo data: python app/seed.py
@@ -113,7 +113,7 @@ async def health():
     return {
         "status":   "ok",
         "version":  settings.app_version,
-        "database": "sqlite",
+        "database": "postgresql",
         "payments": "mock" if settings.lnbits_mock_mode else "lnbits-live",
     }
 

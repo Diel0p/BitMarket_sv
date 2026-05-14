@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     app_port: int = 8000
     debug: bool = True
 
+    # -- Database ------------------------------------------------
+    # PostgreSQL DSN example:
+    # postgresql://postgres:postgres@localhost:5432/bitmarket
+    database_url: str = "postgresql://postgres:postgres@localhost:5432/bitmarket"
+
     # ── Auth ──────────────────────────────────────────────
     # Safe default lets the app run without any .env file.
     # CHANGE THIS in production.

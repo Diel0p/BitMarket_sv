@@ -1,73 +1,74 @@
 """
-SQLite-backed document store (NoSQL-style API)
-==============================================
-Persists collections as JSON documents inside SQLite tables.
+PostgreSQL-backed document store (JSONB + SQL queries).
 
 Collections available:
     users, products, orders, invoices
 """
 
 import json
-import sqlite3
 import uuid
-from pathlib import Path
 from typing import Any
 
+import psycopg
+from psycopg.rows import dict_row
 
-_DB_FILE = Path(__file__).resolve().parents[2] / "data" / "bitmarket.db"
+from app.app.config.settings import get_settings
+
+
+settings = get_settings()
 _COLLECTIONS = ("users", "products", "orders", "invoices")
-_conn: sqlite3.Connection | None = None
+_conn: psycopg.Connection | None = None
 
 
-def _get_conn() -> sqlite3.Connection:
+def _validate_collection(collection: str) -> str:
+    if collection not in _COLLECTIONS:
+        raise ValueError(f"Unsupported collection: {collection}")
+    return collection
+
+
+def _get_conn() -> psycopg.Connection:
     global _conn
-    if _conn is None:
-        _DB_FILE.parent.mkdir(parents=True, exist_ok=True)
-        _conn = sqlite3.connect(_DB_FILE)
+    if _conn is None or _conn.closed:
+        _conn = psycopg.connect(settings.database_url)
+        _conn.autocommit = True
     return _conn
 
 
 def _ensure_schema() -> None:
     conn = _get_conn()
-    for collection in _COLLECTIONS:
-        conn.execute(
-            f"CREATE TABLE IF NOT EXISTS {collection} ("
-            "id TEXT PRIMARY KEY, "
-            "doc TEXT NOT NULL"
-            ")"
-        )
-    conn.commit()
+    with conn.cursor() as cur:
+        for collection in _COLLECTIONS:
+            cur.execute(
+                f"CREATE TABLE IF NOT EXISTS {collection} ("
+                "id TEXT PRIMARY KEY, "
+                "doc JSONB NOT NULL"
+                ")"
+            )
+            cur.execute(
+                f"CREATE INDEX IF NOT EXISTS idx_{collection}_doc_gin "
+                f"ON {collection} USING GIN (doc)"
+            )
+            cur.execute(
+                f"CREATE INDEX IF NOT EXISTS idx_{collection}_created_at "
+                f"ON {collection} ((doc->>'created_at'))"
+            )
 
 
-def _read_doc(row: sqlite3.Row | tuple | None) -> dict | None:
-    if not row:
-        return None
-    if isinstance(row, sqlite3.Row):
-        raw = row["doc"]
-    else:
-        raw = row[1]
-    return json.loads(raw)
+def _build_filter_payload(filters: dict[str, Any]) -> str:
+    return json.dumps(filters, ensure_ascii=True)
 
-
-def _matches_filters(doc: dict, filters: dict[str, Any]) -> bool:
-    return all(doc.get(k) == v for k, v in filters.items())
-
-
-# ── Lifecycle (kept for API compatibility with main.py) ────
 
 async def connect_db() -> None:
-    conn = _get_conn()
-    conn.row_factory = sqlite3.Row
     _ensure_schema()
-    print(f"✅ SQLite document database ready: {_DB_FILE}")
+    print("PostgreSQL document database ready")
 
 
 async def close_db() -> None:
     global _conn
-    if _conn is not None:
+    if _conn is not None and not _conn.closed:
         _conn.close()
-        _conn = None
-    print("🔌 SQLite document database closed")
+    _conn = None
+    print("PostgreSQL document database closed")
 
 
 def get_db():
@@ -75,76 +76,92 @@ def get_db():
     return _get_conn()
 
 
-# ── CRUD helpers ───────────────────────────────────────────
-
 def new_id() -> str:
-    """Generate a unique document ID."""
     return uuid.uuid4().hex
 
 
 def db_insert(collection: str, doc: dict) -> str:
-    """Insert a document and return its id."""
+    table = _validate_collection(collection)
     conn = _get_conn()
     doc_id = doc.get("id") or new_id()
-    doc["id"] = doc_id
     payload = {**doc, "id": doc_id}
-    conn.execute(
-        f"INSERT OR REPLACE INTO {collection} (id, doc) VALUES (?, ?)",
-        (doc_id, json.dumps(payload, ensure_ascii=True)),
-    )
-    conn.commit()
+
+    with conn.cursor() as cur:
+        cur.execute(
+            f"INSERT INTO {table} (id, doc) VALUES (%s, %s::jsonb) "
+            "ON CONFLICT (id) DO UPDATE SET doc = EXCLUDED.doc",
+            (doc_id, json.dumps(payload, ensure_ascii=True)),
+        )
+    doc["id"] = doc_id
     return doc_id
 
 
 def db_find_one(collection: str, **filters) -> dict | None:
-    """Return first document matching all keyword filters."""
+    table = _validate_collection(collection)
     conn = _get_conn()
-    rows = conn.execute(f"SELECT id, doc FROM {collection}").fetchall()
-    for row in rows:
-        doc = _read_doc(row)
-        if doc and _matches_filters(doc, filters):
-            return dict(doc)
-    return None
+    payload = _build_filter_payload(filters)
+
+    with conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(
+            f"SELECT doc FROM {table} WHERE doc @> %s::jsonb LIMIT 1",
+            (payload,),
+        )
+        row = cur.fetchone()
+    if not row:
+        return None
+    return dict(row["doc"])
 
 
 def db_find_all(collection: str, **filters) -> list[dict]:
-    """Return all documents matching all keyword filters."""
+    table = _validate_collection(collection)
     conn = _get_conn()
-    rows = conn.execute(f"SELECT id, doc FROM {collection}").fetchall()
-    results = []
-    for row in rows:
-        doc = _read_doc(row)
-        if doc and _matches_filters(doc, filters):
-            results.append(dict(doc))
-    return sorted(results, key=lambda d: d.get("created_at", ""), reverse=True)
+    payload = _build_filter_payload(filters)
+
+    with conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(
+            f"SELECT doc FROM {table} "
+            "WHERE doc @> %s::jsonb "
+            "ORDER BY COALESCE(doc->>'created_at', '') DESC",
+            (payload,),
+        )
+        rows = cur.fetchall()
+    return [dict(row["doc"]) for row in rows]
 
 
 def db_update(collection: str, doc_id: str, updates: dict) -> dict | None:
-    """Update fields on a document by id. Returns updated doc or None."""
+    table = _validate_collection(collection)
     conn = _get_conn()
-    row = conn.execute(
-        f"SELECT id, doc FROM {collection} WHERE id = ?",
-        (doc_id,),
-    ).fetchone()
-    current = _read_doc(row)
-    if not current:
+
+    with conn.cursor(row_factory=dict_row) as cur:
+        cur.execute(
+            f"UPDATE {table} "
+            "SET doc = doc || %s::jsonb "
+            "WHERE id = %s "
+            "RETURNING doc",
+            (json.dumps(updates, ensure_ascii=True), doc_id),
+        )
+        row = cur.fetchone()
+    if not row:
         return None
-    current.update(updates)
-    conn.execute(
-        f"UPDATE {collection} SET doc = ? WHERE id = ?",
-        (json.dumps(current, ensure_ascii=True), doc_id),
-    )
-    conn.commit()
-    return dict(current)
+    return dict(row["doc"])
 
 
 def db_count(collection: str, **filters) -> int:
-    return len(db_find_all(collection, **filters))
+    table = _validate_collection(collection)
+    conn = _get_conn()
+    payload = _build_filter_payload(filters)
+
+    with conn.cursor() as cur:
+        cur.execute(
+            f"SELECT COUNT(*) FROM {table} WHERE doc @> %s::jsonb",
+            (payload,),
+        )
+        return int(cur.fetchone()[0])
 
 
 def db_clear_all() -> None:
     """Wipe all collections. Used between tests."""
     conn = _get_conn()
-    for col in _COLLECTIONS:
-        conn.execute(f"DELETE FROM {col}")
-    conn.commit()
+    with conn.cursor() as cur:
+        for col in _COLLECTIONS:
+            cur.execute(f"DELETE FROM {col}")

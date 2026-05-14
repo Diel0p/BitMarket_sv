@@ -26,7 +26,7 @@ Proyecto funcional en desarrollo activo.
 ## 🛠️ Stack Tecnologico
 
 - Backend: FastAPI
-- Base de datos: SQLite (document-store style)
+- Base de datos: PostgreSQL (JSONB + consultas SQL reales)
 - Auth: JWT + bcrypt
 - Pagos: LNbits (live) / Mock mode
 - Frontend: Jinja2 + JS + CSS
@@ -138,6 +138,8 @@ Nota: la comision de plataforma por defecto esta configurada en `MARKETPLACE_FEE
 2. Si no configuras LNbits, el sistema usa modo mock automaticamente.
 
 Variables clave:
+
+- DATABASE_URL
 
 - LNBITS_URL
 - LNBITS_ADMIN_KEY
