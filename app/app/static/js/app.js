@@ -2,6 +2,40 @@
 
 const API = '/api';
 
+function formatApiError(detail) {
+  if (!detail) return 'Error';
+  if (typeof detail === 'string') return detail;
+
+  if (Array.isArray(detail)) {
+    const parts = detail
+      .map((item) => {
+        if (!item) return null;
+        if (typeof item === 'string') return item;
+        if (typeof item === 'object') {
+          const field = Array.isArray(item.loc) ? item.loc.filter(p => p !== 'body').join('.') : '';
+          const message = item.msg || item.message;
+          if (field && message) return `${field}: ${message}`;
+          if (message) return message;
+        }
+        return String(item);
+      })
+      .filter(Boolean);
+    return parts.length ? parts.join(' | ') : 'Validation error';
+  }
+
+  if (typeof detail === 'object') {
+    if (typeof detail.message === 'string') return detail.message;
+    if (typeof detail.msg === 'string') return detail.msg;
+    try {
+      return JSON.stringify(detail);
+    } catch {
+      return 'Error';
+    }
+  }
+
+  return String(detail);
+}
+
 // ── Token helpers ─────────────────────────────────────────
 const auth = {
   get token() { return localStorage.getItem('bm_token'); },
@@ -24,7 +58,7 @@ async function apiFetch(path, opts = {}) {
   if (auth.token) headers['Authorization'] = `Bearer ${auth.token}`;
   const res = await fetch(API + path, { ...opts, headers });
   const data = await res.json();
-  if (!res.ok) throw { status: res.status, message: data.detail || data.message || 'Error' };
+  if (!res.ok) throw { status: res.status, message: formatApiError(data.detail || data.message || data) };
   return data;
 }
 
@@ -75,15 +109,71 @@ function hydrateNavbar() {
       ${u.role === 'seller' ? '<a href="/seller" class="navbar__link">Dashboard</a>' : ''}
       ${u.role === 'admin'  ? '<a href="/admin"  class="navbar__link">Admin</a>' : ''}
       ${u.role === 'buyer'  ? '<a href="/orders" class="navbar__link">Orders</a>' : ''}
+      ${u.role === 'buyer'  ? '<a href="/cart" class="navbar__link navbar__cart-link" title="Carrito"><span class="cart-icon-wrap">🛒<span id="cart-count-badge" class="cart-count-badge">0</span></span></a>' : ''}
       <button class="navbar__link" onclick="logout()">Logout</button>
     `;
+    refreshCartCount();
   } else {
     el.innerHTML = `
       <a href="/login"    class="navbar__link">Login</a>
       <a href="/register" class="navbar__btn">Sign up</a>
     `;
+    updateCartIndicators(0);
   }
 }
+
+function getCartItemCount(cart) {
+  const items = cart?.items || [];
+  return items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+}
+
+function ensureFloatingCartButton() {
+  let floating = document.getElementById('floating-cart-link');
+  if (floating) return floating;
+
+  floating = document.createElement('a');
+  floating.id = 'floating-cart-link';
+  floating.className = 'floating-cart-link';
+  floating.href = '/cart';
+  floating.innerHTML = '🛒 <span id="floating-cart-count" class="floating-cart-count">0</span>';
+  floating.style.display = 'none';
+  document.body.appendChild(floating);
+  return floating;
+}
+
+function updateCartIndicators(count) {
+  const badge = document.getElementById('cart-count-badge');
+  if (badge) {
+    badge.textContent = String(count);
+    badge.style.display = 'inline-flex';
+  }
+
+  const floating = ensureFloatingCartButton();
+  const floatingCount = document.getElementById('floating-cart-count');
+  const showFloating = auth.isLoggedIn() && auth.role() === 'buyer' && !window.location.pathname.startsWith('/cart');
+
+  floating.style.display = showFloating ? 'inline-flex' : 'none';
+  if (floatingCount) floatingCount.textContent = String(count);
+}
+
+async function refreshCartCount() {
+  if (!auth.isLoggedIn() || auth.role() !== 'buyer') {
+    updateCartIndicators(0);
+    return 0;
+  }
+
+  try {
+    const data = await apiFetch('/cart');
+    const count = getCartItemCount(data?.cart);
+    updateCartIndicators(count);
+    return count;
+  } catch (_) {
+    updateCartIndicators(0);
+    return 0;
+  }
+}
+
+window.refreshCartCount = refreshCartCount;
 
 function logout() {
   auth.clear();
@@ -93,11 +183,24 @@ function logout() {
 // ── Error display ─────────────────────────────────────────
 function showError(containerId, msg) {
   const el = document.getElementById(containerId);
-  if (el) el.innerHTML = `<div class="alert alert-error">${msg}</div>`;
+  if (!el) return;
+  const text = typeof msg === 'string'
+    ? msg
+    : formatApiError(msg);
+  el.textContent = '';
+  const box = document.createElement('div');
+  box.className = 'alert alert-error';
+  box.textContent = text || 'Error';
+  el.appendChild(box);
 }
 function showSuccess(containerId, msg) {
   const el = document.getElementById(containerId);
-  if (el) el.innerHTML = `<div class="alert alert-success">${msg}</div>`;
+  if (!el) return;
+  el.textContent = '';
+  const box = document.createElement('div');
+  box.className = 'alert alert-success';
+  box.textContent = String(msg || '');
+  el.appendChild(box);
 }
 function clearMsg(containerId) {
   const el = document.getElementById(containerId);
@@ -133,6 +236,7 @@ function productCard(p) {
 // ── Run on every page ─────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   hydrateNavbar();
+  refreshCartCount();
 
   // Navbar search
   const searchForm = document.getElementById('search-form');

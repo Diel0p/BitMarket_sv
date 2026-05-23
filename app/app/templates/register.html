@@ -21,47 +21,68 @@
       <form id="register-form">
         <div class="form-group">
           <label class="form-label">Full name</label>
-          <input type="text" id="name" placeholder="Your name" required />
+          <input type="text" id="name" placeholder="Your name" maxlength="100" required />
         </div>
         <div class="form-group">
           <label class="form-label">Phone number</label>
-          <input type="tel" id="phone" placeholder="+503 7000-0000" minlength="8" required />
+          <div style="display:grid;grid-template-columns:120px 1fr;gap:8px">
+            <select id="phone-country" disabled>
+              <option value="503" selected>El Salvador (+503)</option>
+            </select>
+            <input
+              type="tel"
+              id="phone"
+              placeholder="7000-0000 o 2223-4567"
+              inputmode="numeric"
+              pattern="^(?:\+503\s?)?[267]\d{3}-?\d{4}$"
+              title="Usa formato salvadoreno de 8 digitos: 7000-0000 o 2223-4567"
+              required
+            />
+          </div>
+          <p class="form-hint">Formato admitido: 8 digitos con inicio 2, 6 o 7 (con o sin +503).</p>
         </div>
         <div class="form-group">
           <label class="form-label">Email</label>
-          <input type="email" id="email" placeholder="you@example.com" required />
+          <input type="email" id="email" placeholder="you@example.com" maxlength="160" autocomplete="email" required />
         </div>
         <div class="form-group">
           <label class="form-label">Department (El Salvador)</label>
           <select id="department" required>
             <option value="">Select a department</option>
-            <option value="Ahuachapan">Ahuachapan</option>
-            <option value="Cabanas">Cabanas</option>
-            <option value="Chalatenango">Chalatenango</option>
-            <option value="Cuscatlan">Cuscatlan</option>
-            <option value="La Libertad">La Libertad</option>
-            <option value="La Paz">La Paz</option>
-            <option value="La Union">La Union</option>
-            <option value="Morazan">Morazan</option>
-            <option value="San Miguel">San Miguel</option>
-            <option value="San Salvador">San Salvador</option>
-            <option value="San Vicente">San Vicente</option>
-            <option value="Santa Ana">Santa Ana</option>
-            <option value="Sonsonate">Sonsonate</option>
-            <option value="Usulutan">Usulutan</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Municipality</label>
+          <select id="municipality" required disabled>
+            <option value="">Select a municipality</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">District</label>
+          <select id="district" required disabled>
+            <option value="">Select a district</option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Address</label>
-          <input type="text" id="address" placeholder="Street, house number, reference" minlength="5" required />
+          <input type="text" id="address" placeholder="Street, house number, reference" minlength="5" maxlength="255" required />
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
-          <input type="password" id="password" placeholder="Min. 8 characters" minlength="8" required />
+          <input type="password" id="password" placeholder="Min. 8 characters" minlength="8" maxlength="128" autocomplete="new-password" required />
+          <p class="form-hint">Debe incluir mayuscula, minuscula, numero y simbolo (ej: Mercado123!).</p>
         </div>
         <div class="form-group" id="store-group" style="display:none">
           <label class="form-label">Store name</label>
           <input type="text" id="store-name" placeholder="Your awesome store" />
+        </div>
+        <div class="form-group" id="store-location-group" style="display:none">
+          <label class="form-label">Store location (optional)</label>
+          <input type="text" id="store-location" placeholder="Address, area, or Google Maps link" />
+          <button type="button" class="btn btn-outline btn-sm" id="pick-map-btn" onclick="openLocationPicker()" style="margin-top:8px">
+            Elegir en mapa
+          </button>
+          <p class="form-hint">Buyers can use this location to open your store on a map.</p>
         </div>
         <div class="form-group" id="lightning-group" style="display:none">
           <label class="form-label">Lightning Address o URL de wallet LNbits</label>
@@ -82,30 +103,246 @@
     </div>
   </div>
 </div>
+
+<div id="map-picker-modal" class="map-picker-modal" aria-hidden="true">
+  <div class="map-picker-dialog card">
+    <div class="map-picker-header">
+      <h3>Select store location</h3>
+      <button type="button" class="map-picker-close" onclick="closeLocationPicker()">×</button>
+    </div>
+    <p class="text-muted text-sm" style="margin:0 0 12px 0">Haz clic en el mapa para seleccionar tu ubicación.</p>
+    <div id="store-map" class="store-map"></div>
+    <p id="map-picked-label" class="text-muted text-sm" style="margin:10px 0 0 0">No has seleccionado una ubicación todavía.</p>
+    <div class="map-picker-actions">
+      <button type="button" class="btn btn-ghost" onclick="closeLocationPicker()">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="map-confirm-btn" onclick="confirmLocationPicker()" disabled>Usar ubicación</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // Pre-select role from URL param
 const urlRole = new URLSearchParams(location.search).get('role');
 if (urlRole) setRole(urlRole, document.querySelector(`[data-role="${urlRole}"]`));
 
+let mapPicker;
+let mapMarker;
+let selectedLatLng;
+
+const DEPARTMENT_MUNICIPALITIES = {
+  'Ahuachapan': ['Ahuachapan Norte', 'Ahuachapan Centro', 'Ahuachapan Sur'],
+  'Cabanas': ['Cabanas Oeste', 'Cabanas Este'],
+  'Chalatenango': ['Chalatenango Norte', 'Chalatenango Centro', 'Chalatenango Sur'],
+  'Cuscatlan': ['Cuscatlan Norte', 'Cuscatlan Sur'],
+  'La Libertad': ['La Libertad Norte', 'La Libertad Centro', 'La Libertad Este', 'La Libertad Oeste', 'La Libertad Costa'],
+  'La Paz': ['La Paz Oeste', 'La Paz Centro', 'La Paz Este'],
+  'La Union': ['La Union Norte', 'La Union Sur'],
+  'Morazan': ['Morazan Norte', 'Morazan Sur'],
+  'San Miguel': ['San Miguel Norte', 'San Miguel Centro', 'San Miguel Este', 'San Miguel Oeste'],
+  'San Salvador': ['San Salvador Norte', 'San Salvador Oeste', 'San Salvador Este', 'San Salvador Centro', 'San Salvador Sur'],
+  'San Vicente': ['San Vicente Norte', 'San Vicente Sur'],
+  'Santa Ana': ['Santa Ana Norte', 'Santa Ana Centro', 'Santa Ana Este', 'Santa Ana Oeste'],
+  'Sonsonate': ['Sonsonate Norte', 'Sonsonate Centro', 'Sonsonate Este', 'Sonsonate Oeste'],
+  'Usulutan': ['Usulutan Norte', 'Usulutan Este', 'Usulutan Oeste'],
+};
+
+const MUNICIPALITY_DISTRICTS = {
+  'San Salvador Norte': ['Aguilares', 'El Paisnal', 'Guazapa'],
+  'San Salvador Oeste': ['Apopa', 'Nejapa'],
+  'San Salvador Este': ['Ilopango', 'San Martin', 'Soyapango', 'Tonacatepeque'],
+  'San Salvador Centro': ['Ayutuxtepeque', 'Ciudad Delgado', 'Cuscatancingo', 'Mejicanos', 'San Salvador'],
+  'San Salvador Sur': ['Panchimalco', 'Rosario de Mora', 'San Marcos', 'Santiago Texacuangos', 'Santo Tomas'],
+};
+
+function fillSelectOptions(selectEl, values, placeholder) {
+  selectEl.innerHTML = '';
+  const first = document.createElement('option');
+  first.value = '';
+  first.textContent = placeholder;
+  selectEl.appendChild(first);
+
+  values.forEach((value) => {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = value;
+    selectEl.appendChild(opt);
+  });
+}
+
+function districtsForMunicipality(municipality) {
+  const knownDistricts = MUNICIPALITY_DISTRICTS[municipality];
+  if (knownDistricts?.length) return knownDistricts;
+  if (!municipality) return [];
+  return [municipality];
+}
+
+function onDepartmentChange() {
+  const department = document.getElementById('department').value;
+  const municipalitySelect = document.getElementById('municipality');
+  const districtSelect = document.getElementById('district');
+
+  const municipalities = DEPARTMENT_MUNICIPALITIES[department] || [];
+  fillSelectOptions(municipalitySelect, municipalities, 'Select a municipality');
+  municipalitySelect.disabled = municipalities.length === 0;
+
+  fillSelectOptions(districtSelect, [], 'Select a district');
+  districtSelect.disabled = true;
+}
+
+function onMunicipalityChange() {
+  const municipality = document.getElementById('municipality').value;
+  const districtSelect = document.getElementById('district');
+  const districts = districtsForMunicipality(municipality);
+
+  fillSelectOptions(districtSelect, districts, 'Select a district');
+  districtSelect.disabled = districts.length === 0;
+}
+
+function initAdministrativeSelectors() {
+  const departmentSelect = document.getElementById('department');
+  const municipalitySelect = document.getElementById('municipality');
+
+  fillSelectOptions(
+    departmentSelect,
+    Object.keys(DEPARTMENT_MUNICIPALITIES),
+    'Select a department'
+  );
+
+  departmentSelect.addEventListener('change', onDepartmentChange);
+  municipalitySelect.addEventListener('change', onMunicipalityChange);
+}
+
+initAdministrativeSelectors();
+
+function parseLatLngFromValue(value) {
+  const raw = (value || '').trim();
+  if (!raw) return null;
+
+  const coordMatch = raw.match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
+  if (coordMatch) {
+    return { lat: Number(coordMatch[1]), lng: Number(coordMatch[2]) };
+  }
+  return null;
+}
+
+function openLocationPicker() {
+  const modal = document.getElementById('map-picker-modal');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+
+  const initial = parseLatLngFromValue(document.getElementById('store-location').value) || { lat: 13.7942, lng: -88.8965 };
+
+  if (!mapPicker) {
+    mapPicker = L.map('store-map').setView([initial.lat, initial.lng], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(mapPicker);
+
+    mapPicker.on('click', (e) => {
+      selectedLatLng = e.latlng;
+      if (!mapMarker) {
+        mapMarker = L.marker(selectedLatLng).addTo(mapPicker);
+      } else {
+        mapMarker.setLatLng(selectedLatLng);
+      }
+      document.getElementById('map-picked-label').textContent = `Seleccionado: ${selectedLatLng.lat.toFixed(6)}, ${selectedLatLng.lng.toFixed(6)}`;
+      document.getElementById('map-confirm-btn').disabled = false;
+    });
+  }
+
+  mapPicker.setView([initial.lat, initial.lng], 13);
+  selectedLatLng = initial;
+  if (!mapMarker) {
+    mapMarker = L.marker([initial.lat, initial.lng]).addTo(mapPicker);
+  } else {
+    mapMarker.setLatLng([initial.lat, initial.lng]);
+  }
+  document.getElementById('map-picked-label').textContent = `Seleccionado: ${initial.lat.toFixed(6)}, ${initial.lng.toFixed(6)}`;
+  document.getElementById('map-confirm-btn').disabled = false;
+
+  setTimeout(() => mapPicker.invalidateSize(), 100);
+}
+
+function closeLocationPicker() {
+  const modal = document.getElementById('map-picker-modal');
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+function confirmLocationPicker() {
+  if (!selectedLatLng) return;
+  const lat = selectedLatLng.lat.toFixed(6);
+  const lng = selectedLatLng.lng.toFixed(6);
+  document.getElementById('store-location').value = `${lat},${lng}`;
+  closeLocationPicker();
+}
+
+document.getElementById('map-picker-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'map-picker-modal') {
+    closeLocationPicker();
+  }
+});
+
 function formatPhoneInput(value) {
-  const digits = (value || '').replace(/\D/g, '');
-  if (digits.startsWith('503') && digits.length > 8) {
-    const local = digits.slice(3, 11);
+  const raw = (value || '').trim();
+  const digits = raw.replace(/\D/g, '');
+
+  if (!digits) return '';
+
+  if (raw.startsWith('+') || digits.startsWith('503')) {
+    const local = (digits.startsWith('503') ? digits.slice(3) : digits).slice(0, 8);
     if (local.length <= 4) return `+503 ${local}`;
     return `+503 ${local.slice(0, 4)}-${local.slice(4)}`;
   }
+
   const local = digits.slice(0, 8);
   if (local.length <= 4) return local;
   return `${local.slice(0, 4)}-${local.slice(4)}`;
+}
+
+function isValidSvPhone(value) {
+  return /^(?:\+503\s?)?[267]\d{3}-?\d{4}$/.test((value || '').trim());
+}
+
+function sanitizeTextInput(value, { maxLength = 255, allowEmpty = false } = {}) {
+  const cleaned = String(value || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+  if (!allowEmpty && !cleaned) {
+    throw new Error('Completa todos los campos obligatorios.');
+  }
+  if (cleaned.length > maxLength) {
+    throw new Error(`Un campo supera el maximo permitido (${maxLength}).`);
+  }
+  if (/[<>]/.test(cleaned)) {
+    throw new Error('No uses caracteres < o > en los campos de texto.');
+  }
+  return cleaned;
 }
 
 const phoneInput = document.getElementById('phone');
 if (phoneInput) {
   phoneInput.addEventListener('input', e => {
     e.target.value = formatPhoneInput(e.target.value);
+    if (e.target.value && !isValidSvPhone(e.target.value)) {
+      e.target.setCustomValidity('Numero invalido. Usa 7000-0000 o 2223-4567 (con o sin +503).');
+    } else {
+      e.target.setCustomValidity('');
+    }
+  });
+
+  phoneInput.addEventListener('blur', e => {
+    const value = e.target.value.trim();
+    if (!value) return;
+    if (!isValidSvPhone(value)) {
+      e.target.setCustomValidity('Numero invalido. Usa 7000-0000 o 2223-4567 (con o sin +503).');
+      e.target.reportValidity();
+      return;
+    }
+    e.target.setCustomValidity('');
   });
 }
 
@@ -115,6 +352,7 @@ function setRole(role, btn) {
   if (btn) btn.classList.add('active');
   const isSeller = role === 'seller';
   document.getElementById('store-group').style.display       = isSeller ? 'block' : 'none';
+  document.getElementById('store-location-group').style.display = isSeller ? 'block' : 'none';
   document.getElementById('lightning-group').style.display   = isSeller ? 'block' : 'none';
   document.getElementById('invoice-key-group').style.display = isSeller ? 'block' : 'none';
 }
@@ -127,27 +365,57 @@ document.getElementById('register-form').addEventListener('submit', async e => {
   clearMsg('msg');
 
   try {
+    const name = sanitizeTextInput(document.getElementById('name').value, { maxLength: 100 });
+    const email = String(document.getElementById('email').value || '').trim().toLowerCase();
+    const address = sanitizeTextInput(document.getElementById('address').value, { maxLength: 255 });
+    const password = String(document.getElementById('password').value || '').trim();
+    const phone = String(document.getElementById('phone').value || '').trim();
+
+    if (!isValidSvPhone(phone)) {
+      throw new Error('Numero invalido. Usa 7000-0000 o 2223-4567 (con o sin +503).');
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error('Correo electronico invalido.');
+    }
+    if (
+      password.length < 8 ||
+      !/[A-Z]/.test(password) ||
+      !/[a-z]/.test(password) ||
+      !/\d/.test(password) ||
+      !/[^A-Za-z0-9]/.test(password) ||
+      /\s/.test(password)
+    ) {
+      throw new Error('La contrasena debe tener 8+ caracteres, mayuscula, minuscula, numero y simbolo, sin espacios.');
+    }
+
     const payload = {
-      name: document.getElementById('name').value,
-      phone: document.getElementById('phone').value,
-      email: document.getElementById('email').value,
-      department: document.getElementById('department').value,
-      address: document.getElementById('address').value,
-      password: document.getElementById('password').value,
+      name,
+      phone,
+      email,
+      department: sanitizeTextInput(document.getElementById('department').value, { maxLength: 80 }),
+      municipality: sanitizeTextInput(document.getElementById('municipality').value, { maxLength: 120 }),
+      district: sanitizeTextInput(document.getElementById('district').value, { maxLength: 120 }),
+      address,
+      password,
       role: document.getElementById('role-input').value,
     };
     const sn = document.getElementById('store-name').value;
-    if (sn) payload.store_name = sn;
-    const lightningAddress = document.getElementById('lightning-address').value.trim();
+    if (sn) payload.store_name = sanitizeTextInput(sn, { maxLength: 100, allowEmpty: true });
+    const storeLocation = sanitizeTextInput(document.getElementById('store-location').value, { maxLength: 255, allowEmpty: true });
+    if (storeLocation) payload.store_location = storeLocation;
+    const lightningAddress = sanitizeTextInput(document.getElementById('lightning-address').value, { maxLength: 255, allowEmpty: true });
     if (lightningAddress) payload.lightning_address = lightningAddress;
-    const invoiceKey = document.getElementById('lnbits-invoice-key').value.trim();
+    const invoiceKey = sanitizeTextInput(document.getElementById('lnbits-invoice-key').value, { maxLength: 255, allowEmpty: true });
     if (invoiceKey) payload.lnbits_invoice_key = invoiceKey;
 
     const data = await apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(payload) });
     auth.set(data.access_token, data.user);
     window.location.href = data.user.role === 'seller' ? '/seller' : '/products';
   } catch(e) {
-    showError('msg', e.message || 'Registration failed');
+    const message = typeof e?.message === 'string'
+      ? e.message
+      : formatApiError?.(e?.detail || e?.message || e) || 'Registration failed';
+    showError('msg', message);
     btn.disabled = false; btn.textContent = 'Create account';
   }
 });
@@ -167,6 +435,63 @@ document.getElementById('register-form').addEventListener('submit', async e => {
 .role-tab.active {
   background: rgba(247,147,26,0.12); border-color: rgba(247,147,26,0.4);
   color: var(--orange); font-weight: 600;
+}
+
+.map-picker-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 18, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1200;
+}
+
+.map-picker-modal.open {
+  display: flex;
+}
+
+.map-picker-dialog {
+  width: min(760px, 100%);
+  padding: 18px;
+  border: 1px solid var(--border);
+}
+
+.map-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.map-picker-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.map-picker-close {
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.store-map {
+  width: 100%;
+  height: 320px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.map-picker-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
 }
 </style>
 {% endblock %}

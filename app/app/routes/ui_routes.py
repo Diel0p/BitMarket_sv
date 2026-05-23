@@ -55,6 +55,16 @@ async def checkout(request: Request, order_id: str):
     return _r(request, "checkout.html")
 
 
+@router.get("/cart", response_class=HTMLResponse)
+async def cart(request: Request):
+    return _r(request, "cart.html")
+
+
+@router.get("/cart/checkout", response_class=HTMLResponse)
+async def cart_checkout_page(request: Request):
+    return _r(request, "cart_checkout.html")
+
+
 # ── Buyer ──────────────────────────────────────────────────
 
 @router.get("/orders", response_class=HTMLResponse)

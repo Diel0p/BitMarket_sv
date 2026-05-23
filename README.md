@@ -77,10 +77,13 @@ pip install -r requirements.txt
 # 4) Crear .env desde ejemplo (si no existe)
 Copy-Item .env.example .env
 
-# 5) (Opcional) cargar datos demo
+# 5) Conectar DB y crear/actualizar superusuario admin
+python app\bootstrap_db.py
+
+# 6) (Opcional) cargar datos demo
 python app\seed.py
 
-# 6) Ejecutar API/UI
+# 7) Ejecutar API/UI
 uvicorn app.main:app --reload
 ```
 
@@ -100,10 +103,13 @@ pip install -r requirements.txt
 # 4) Crear .env desde ejemplo (si no existe)
 cp .env.example .env
 
-# 5) (Opcional) cargar datos demo
+# 5) Conectar DB y crear/actualizar superusuario admin
+python app/bootstrap_db.py
+
+# 6) (Opcional) cargar datos demo
 python app/seed.py
 
-# 6) Ejecutar API/UI
+# 7) Ejecutar API/UI
 uvicorn app.main:app --reload
 ```
 
@@ -123,10 +129,13 @@ pip install -r requirements.txt
 REM 4) Crear .env desde ejemplo (si no existe)
 copy .env.example .env
 
-REM 5) (Opcional) cargar datos demo
+REM 5) Conectar DB y crear/actualizar superusuario admin
+python app\bootstrap_db.py
+
+REM 6) (Opcional) cargar datos demo
 python app\seed.py
 
-REM 6) Ejecutar API/UI
+REM 7) Ejecutar API/UI
 uvicorn app.main:app --reload
 ```
 
@@ -140,6 +149,9 @@ Nota: la comision de plataforma por defecto esta configurada en `MARKETPLACE_FEE
 Variables clave:
 
 - DATABASE_URL
+- SUPERUSER_NAME
+- SUPERUSER_EMAIL
+- SUPERUSER_PASSWORD
 
 - LNBITS_URL
 - LNBITS_ADMIN_KEY

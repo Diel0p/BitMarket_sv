@@ -65,6 +65,10 @@ async def create_super_user(data: AdminCreateUserRequest, db) -> dict:
         doc["address"] = data.address.strip()
     if data.department:
         doc["department"] = data.department.strip()
+    if data.municipality:
+        doc["municipality"] = data.municipality.strip()
+    if data.district:
+        doc["district"] = data.district.strip()
 
     user_id = db_insert("users", doc)
     safe = {k: v for k, v in doc.items() if k != "hashed_password"}

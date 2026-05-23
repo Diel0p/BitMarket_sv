@@ -210,34 +210,82 @@ document.getElementById('product-form').addEventListener('submit', async e => {
   btn.disabled = true; btn.textContent = isEdit ? 'Saving…' : 'Creating…';
   clearMsg('form-msg');
   try {
-    const imageUrl = await uploadProductImageIfSelected();
-    const tags = document.getElementById('p-tags').value
-      .split(',').map(t => t.trim()).filter(Boolean);
-    const payload = {
-      title: document.getElementById('p-title').value,
-      description: document.getElementById('p-desc').value,
-      price_sats: parseInt(document.getElementById('p-price').value),
-      stock: parseInt(document.getElementById('p-stock').value),
-      category: document.getElementById('p-category').value,
-      tags,
+    const cleanText = (value, maxLength, fieldLabel) => {
+      const cleaned = String(value || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+      if (!cleaned) throw new Error(`${fieldLabel} es obligatorio.`);
+      if (cleaned.length > maxLength) throw new Error(`${fieldLabel} excede el maximo permitido.`);
+      if (/[<>]/.test(cleaned)) throw new Error(`${fieldLabel} contiene caracteres no permitidos.`);
+      return cleaned;
     };
 
+    const title = cleanText(document.getElementById('p-title').value, 200, 'Titulo');
+    const description = cleanText(document.getElementById('p-desc').value, 5000, 'Descripcion');
+    const category = cleanText(document.getElementById('p-category').value, 60, 'Categoria');
+    const price = parseInt(document.getElementById('p-price').value, 10);
+    const stock = parseInt(document.getElementById('p-stock').value, 10);
+
+    if (!Number.isInteger(price) || price <= 0 || price > 100000000000) {
+      throw new Error('Precio invalido.');
+    }
+    if (!Number.isInteger(stock) || stock < 0 || stock > 1000000) {
+      throw new Error('Stock invalido.');
+    }
+
+    const tags = document.getElementById('p-tags').value
+      .split(',')
+      .map(t => t.trim().toLowerCase())
+      .filter(Boolean);
+    if (tags.length > 15) throw new Error('Maximo 15 tags permitidos.');
+    if (tags.some(t => t.length > 30 || /[<>]/.test(t))) {
+      throw new Error('Tags invalidos.');
+    }
+
+    const imageInput = document.getElementById('p-image');
+    const imageFile = imageInput?.files?.[0];
+    if (imageFile) {
+      const maxBytes = 5 * 1024 * 1024;
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(imageFile.type)) throw new Error('Formato de imagen no permitido.');
+      if (imageFile.size > maxBytes) throw new Error('La imagen supera 5MB.');
+    }
+
     if (isEdit) {
-      if (imageUrl) payload.images = [imageUrl];
+      // Para edición, seguir usando JSON (opcional: adaptar a FormData si quieres permitir cambiar imagen en edición)
+      const payload = {
+        title,
+        description,
+        price_sats: price,
+        stock,
+        category,
+        tags,
+      };
+      // Si hay imagen nueva, puedes adaptar aquí para PUT con FormData
       await apiFetch(`/products/${editingId}`, {
         method: 'PUT',
         body: JSON.stringify(payload)
       });
       showSuccess('form-msg', '✓ Product updated!');
     } else {
-      payload.images = imageUrl ? [imageUrl] : [];
-      await apiFetch('/products', {
+      // Crear producto: enviar todo como FormData
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('price_sats', String(price));
+      formData.append('stock', String(stock));
+      formData.append('category', category);
+      formData.append('tags', tags.join(','));
+      if (imageInput.files && imageInput.files[0]) {
+        formData.append('image', imageInput.files[0]);
+      }
+      const res = await fetch('/api/products', {
         method: 'POST',
-        body: JSON.stringify(payload)
+        headers: { Authorization: `Bearer ${auth.token}` },
+        body: formData,
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || data.message || 'Error creating product');
       showSuccess('form-msg', '✓ Product created!');
     }
-
     setTimeout(() => {
       closeForm();
       resetProductForm();

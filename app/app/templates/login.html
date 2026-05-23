@@ -14,11 +14,11 @@
       <form id="login-form">
         <div class="form-group">
           <label class="form-label">Email</label>
-          <input type="email" id="email" placeholder="you@example.com" required />
+          <input type="email" id="email" placeholder="you@example.com" maxlength="160" autocomplete="email" required />
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
-          <input type="password" id="password" placeholder="••••••••" required />
+          <input type="password" id="password" placeholder="••••••••" minlength="8" maxlength="128" autocomplete="current-password" required />
         </div>
         <button type="submit" class="btn btn-primary btn-full" id="submit-btn">
           Login
@@ -51,9 +51,19 @@ document.getElementById('login-form').addEventListener('submit', async e => {
   clearMsg('msg');
 
   try {
+    const email = String(document.getElementById('email').value || '').trim().toLowerCase();
+    const password = String(document.getElementById('password').value || '').trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error('Correo electronico invalido.');
+    }
+    if (password.length < 8 || password.length > 128) {
+      throw new Error('Contrasena invalida.');
+    }
+
     const data = await apiFetch('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value })
+      body: JSON.stringify({ email, password })
     });
     auth.set(data.access_token, data.user);
 

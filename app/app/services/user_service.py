@@ -4,6 +4,7 @@ Uses in-memory DB helpers (swap to Motor by changing db_* calls).
 """
 
 import re
+from datetime import timedelta
 
 from fastapi import HTTPException, status
 
@@ -20,6 +21,10 @@ _LNURLP_URL_RE = re.compile(
     r"^https?://[^\s]+/(\.well-known/lnurlp/[^\s/?#]+|lnurlp/link/[^\s/?#]+|wallet/[a-f0-9]+)(?:\?[^\s#]*)?$",
     re.IGNORECASE,
 )
+
+_MAX_LOGIN_ATTEMPTS = 5
+_LOCKOUT_MINUTES = 15
+_LOGIN_ATTEMPTS: dict[str, dict] = {}
 
 
 def _normalize_lightning_address(value: str | None) -> str | None:
@@ -68,9 +73,15 @@ async def register_user(data: UserRegisterRequest, db) -> dict:
         doc["address"] = data.address.strip()
     if data.department:
         doc["department"] = data.department.strip()
+    if data.municipality:
+        doc["municipality"] = data.municipality.strip()
+    if data.district:
+        doc["district"] = data.district.strip()
     if data.role.value == "seller":
         # Seller accounts must always have payout info to prevent unpayable orders later.
         doc["store_name"] = data.store_name or f"{data.name}'s Store"
+        if data.store_location:
+            doc["store_location"] = data.store_location.strip()
         if not lightning_address:
             raise HTTPException(status_code=400, detail="Seller accounts require a Lightning Address")
         doc["lightning_address"] = lightning_address
@@ -87,12 +98,31 @@ async def register_user(data: UserRegisterRequest, db) -> dict:
 
 
 async def login_user(data: UserLoginRequest, db) -> dict:
+    email_key = data.email.lower()
+    attempts = _LOGIN_ATTEMPTS.get(email_key)
+    if attempts and attempts.get("count", 0) >= _MAX_LOGIN_ATTEMPTS:
+        lock_until = attempts.get("lock_until")
+        if lock_until and utcnow() < lock_until:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many failed login attempts. Try again in a few minutes",
+            )
+        _LOGIN_ATTEMPTS.pop(email_key, None)
+
     user = db_find_one("users", email=data.email)
     # Use a generic auth error to avoid leaking whether an email exists.
     if not user or not verify_password(data.password, user["hashed_password"]):
+        current = _LOGIN_ATTEMPTS.get(email_key, {"count": 0, "lock_until": None})
+        new_count = current["count"] + 1
+        lock_until = None
+        if new_count >= _MAX_LOGIN_ATTEMPTS:
+            lock_until = utcnow() + timedelta(minutes=_LOCKOUT_MINUTES)
+        _LOGIN_ATTEMPTS[email_key] = {"count": new_count, "lock_until": lock_until}
         raise HTTPException(status_code=401, detail="Invalid email or password")
     if not user.get("is_active", True):
         raise HTTPException(status_code=403, detail="Account has been deactivated")
+
+    _LOGIN_ATTEMPTS.pop(email_key, None)
 
     token = create_access_token({"sub": user["id"]})
     safe  = {k: v for k, v in user.items() if k != "hashed_password"}
@@ -138,13 +168,21 @@ async def update_user_profile(user_id: str, updates: dict, db) -> dict:
             normalized_updates.get("lightning_address")
         )
 
+    for location_field in ("address", "department", "municipality", "district"):
+        value = normalized_updates.get(location_field)
+        if isinstance(value, str):
+            normalized_updates[location_field] = value.strip()
+
     if user.get("role") == "seller":
         # Keep seller payout destination mandatory after profile edits as well.
         if "lightning_address" in normalized_updates and not normalized_updates["lightning_address"]:
             raise HTTPException(status_code=400, detail="Seller accounts require a Lightning Address")
+        if "store_location" in normalized_updates and normalized_updates["store_location"]:
+            normalized_updates["store_location"] = normalized_updates["store_location"].strip()
     else:
         # Prevent buyers/admins from mutating seller-only profile fields.
         normalized_updates.pop("store_name", None)
+        normalized_updates.pop("store_location", None)
 
     updated = db_update("users", user_id, normalized_updates)
     if not updated:

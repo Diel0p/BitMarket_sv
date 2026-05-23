@@ -34,6 +34,15 @@ async function loadProduct() {
           <p class="product-card__cat">${p.category}</p>
           <h1 class="product-detail__title">${p.title}</h1>
           <p class="text-muted text-sm">Sold by <strong style="color:var(--text-1)">${p.seller_name || 'Unknown'}</strong></p>
+          ${p.seller_store_location
+            ? `<div class="store-location-box">
+                <p class="text-muted text-sm" style="margin:0 0 8px 0">Store location: <strong style="color:var(--text-1)">${p.seller_store_location}</strong></p>
+                ${canBuy
+                  ? `<button class="btn btn-outline btn-sm" onclick="openSellerMap()">Ver tienda en mapa</button>`
+                  : '<p class="text-muted text-sm" style="margin:0">Inicia sesion como comprador para abrir el mapa.</p>'
+                }
+              </div>`
+            : ''}
 
           <div class="price-box">
             <div>
@@ -55,10 +64,12 @@ async function loadProduct() {
               <button onclick="changeQty(1)">+</button>
             </div>
             ${p.stock > 0 && canBuy
-              ? `<button class="btn btn-primary" style="flex:1" onclick="buyNow()">⚡ Buy now</button>`
+              ? `<button class="btn btn-primary" style="flex:1" onclick="buyNow()">⚡ Buy now</button>
+                 <button class="btn btn-outline" style="flex:1" onclick="addToCart()">🛒 Add to cart</button>`
               : p.stock > 0 && needLogin
               ? `<a href="/login" class="btn btn-outline" style="flex:1">Login to buy</a>`
-              : p.stock === 0 ? `<button class="btn btn-ghost" disabled style="flex:1">Out of stock</button>`
+              : p.stock === 0
+              ? `<button class="btn btn-ghost" disabled style="flex:1">Out of stock</button>`
               : `<button class="btn btn-ghost" disabled style="flex:1">Buyers only</button>`
             }
           </div>
@@ -79,26 +90,88 @@ async function loadProduct() {
 }
 
 let qty = 1;
+
+function resolveMapUrl(locationText) {
+  const value = (locationText || '').trim();
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value)) return value;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(value)}`;
+}
+
+function openSellerMap() {
+  const locationText = window._product?.seller_store_location;
+  const mapUrl = resolveMapUrl(locationText);
+  if (!mapUrl) {
+    alert('Este vendedor no tiene ubicacion registrada.');
+    return;
+  }
+  window.open(mapUrl, '_blank', 'noopener');
+}
+
 function changeQty(dir) {
   const stock = window._product?.stock || 1;
   qty = Math.max(1, Math.min(stock, qty + dir));
-  document.getElementById('qty').textContent = qty;
+  const qtyEl = document.getElementById('qty');
+  if (qtyEl) qtyEl.textContent = qty;
+}
+
+async function addToCart() {
+  if (!auth.isLoggedIn()) { window.location.href = '/login'; return; }
+  const p = window._product;
+  if (!p) return;
+  try {
+    await apiFetch('/cart/items', {
+      method: 'POST',
+      body: JSON.stringify({ product_id: p.id, quantity: qty }),
+    });
+    window.refreshCartCount?.();
+    showCartAddedPrompt();
+  } catch(e) {
+    alert('Error: ' + (e.message || 'No se pudo agregar al carrito'));
+  }
+}
+
+function showCartAddedPrompt() {
+  const existing = document.getElementById('cart-added-toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'cart-added-toast';
+  toast.className = 'cart-added-toast fade-in';
+  toast.innerHTML = `
+    <p>Producto agregado al carrito.</p>
+    <div class="cart-added-toast__actions">
+      <button class="btn btn-ghost btn-sm" id="continue-shopping-btn">Seguir comprando</button>
+      <a href="/cart" class="btn btn-primary btn-sm">Ir al carrito</a>
+    </div>
+  `;
+  document.body.appendChild(toast);
+
+  document.getElementById('continue-shopping-btn').addEventListener('click', () => {
+    toast.remove();
+  });
 }
 
 async function buyNow() {
   if (!auth.isLoggedIn()) { window.location.href = '/login'; return; }
   const p = window._product;
+  if (!p) return;
   try {
     const order = await apiFetch('/orders', {
       method: 'POST',
       body: JSON.stringify({
         items: [{ product_id: p.id, quantity: qty }],
-        shipping_address: { name: auth.user.name, street: 'TBD', city: 'TBD', country: 'TBD' }
-      })
+        shipping_address: {
+          name: auth.user?.name || 'Buyer',
+          street: 'TBD',
+          city: 'TBD',
+          country: 'TBD',
+        },
+      }),
     });
     window.location.href = `/checkout/${order.order_id}?hash=${order.invoice.payment_hash}&amount=${order.invoice.amount_sats}&mock=${order.invoice.is_mock}`;
   } catch(e) {
-    alert('Error: ' + e.message);
+    alert('Error: ' + (e.message || 'No se pudo crear la orden'));
   }
 }
 
@@ -123,6 +196,13 @@ document.addEventListener('DOMContentLoaded', loadProduct);
 .stock-indicator.ok  { background: rgba(34,197,94,0.08);  color: var(--success); }
 .stock-indicator.low { background: rgba(245,158,11,0.08); color: var(--warning); }
 .stock-indicator.out { background: rgba(239,68,68,0.08);  color: var(--error); }
+.store-location-box {
+  margin: 12px 0 18px;
+  padding: 12px;
+  border: 1px dashed var(--border-md);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
 .qty-control {
   display: flex; align-items: center;
   border: 1px solid var(--border-md); border-radius: var(--radius-md); overflow: hidden;
@@ -141,6 +221,26 @@ document.addEventListener('DOMContentLoaded', loadProduct);
 .product-detail__desc p { font-size: 0.9rem; color: var(--text-2); line-height: 1.7; white-space: pre-line; }
 .tags-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
 .tag { font-size: 0.75rem; color: var(--text-3); background: var(--bg-surface); border: 1px solid var(--border); padding: 3px 10px; border-radius: 999px; }
+.cart-added-toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1100;
+  background: var(--bg-card);
+  border: 1px solid var(--border-md);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  min-width: 280px;
+}
+.cart-added-toast p {
+  margin: 0 0 10px 0;
+  font-size: 0.88rem;
+}
+.cart-added-toast__actions {
+  display: flex;
+  gap: 8px;
+}
 @media (max-width: 768px) { .product-detail { grid-template-columns: 1fr; gap: 24px; } }
 </style>
 {% endblock %}

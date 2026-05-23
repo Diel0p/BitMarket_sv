@@ -333,6 +333,15 @@ async def check_and_confirm_payment(payment_hash: str, db) -> dict:
 
 
 async def get_buyer_orders(buyer_id: str, db) -> list[dict]:
+    # Backfill safety: older paid cart checkouts may exist without mirrored orders.
+    paid_cart_orders = db_find_all("cart_orders", buyer_id=buyer_id, payment_status="paid")
+    if paid_cart_orders:
+        from app.app.services.cart_service import _ensure_orders_from_cart_order
+
+        for cart_order in paid_cart_orders:
+            if not db_find_one("orders", cart_order_id=cart_order["id"]):
+                await _ensure_orders_from_cart_order(cart_order)
+
     return db_find_all("orders", buyer_id=buyer_id)
 
 
