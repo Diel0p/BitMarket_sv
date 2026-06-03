@@ -129,7 +129,7 @@ async function changeQty(productId, newQty) {
     cartData = data.cart;
     renderCart();
   } catch(e) {
-    alert(e.message || 'Error al actualizar cantidad');
+    showToast(e.message || 'Error al actualizar cantidad', 'error');
   }
 }
 
@@ -139,18 +139,23 @@ async function removeItem(productId) {
     cartData = data.cart;
     renderCart();
   } catch(e) {
-    alert(e.message || 'Error al eliminar item');
+    showToast(e.message || 'Error al eliminar item', 'error');
   }
 }
 
 async function clearCart() {
-  if (!confirm('¿Vaciar carrito?')) return;
+  const confirmed = await confirmAction('¿Vaciar carrito?', {
+    title: 'Vaciar carrito',
+    confirmText: 'Vaciar',
+  });
+  if (!confirmed) return;
   try {
     const data = await apiFetch('/cart', { method: 'DELETE' });
     cartData = data.cart;
     renderCart();
+    showToast('Carrito vaciado correctamente', 'success');
   } catch(e) {
-    alert(e.message || 'Error al vaciar carrito');
+    showToast(e.message || 'Error al vaciar carrito', 'error');
   }
 }
 

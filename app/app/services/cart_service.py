@@ -302,11 +302,13 @@ async def confirm_payment(payment_hash: str) -> dict:
             exp = exp.replace(tzinfo=timezone.utc)
         if datetime.now(timezone.utc) > exp and cart_order["payment_status"] != "paid":
             db_update("cart_orders", cart_order["id"], {"payment_status": "expired"})
-            # Re-activate cart so buyer can retry
+            # Cancel and clear cart after invoice expiry so stale items are not kept locked in checkout state.
             if cart_order.get("cart_id"):
                 db_update("carts", cart_order["cart_id"], {
-                    "status": "active",
-                    "expires_at": _expires_at(CART_TTL_MINUTES),
+                    "status": "expired",
+                    "items": [],
+                    "total_sats": 0,
+                    "expires_at": _now_iso(),
                 })
             return {"paid": False, "expired": True, "cart_order_id": cart_order["id"]}
 

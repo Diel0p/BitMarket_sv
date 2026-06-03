@@ -149,7 +149,7 @@ async function submitCheckout(e) {
   } catch(err) {
     btn.disabled = false;
     btn.textContent = 'Generar invoice Lightning →';
-    alert(err.message || 'Error al generar invoice');
+    showToast(err.message || 'Error al generar invoice', 'error');
   }
 }
 
@@ -268,7 +268,10 @@ async function pollStatus(paymentHash, isMock) {
 
 function copyInvoice() {
   const txt = document.getElementById('invoice-str')?.textContent;
-  if (txt) { navigator.clipboard.writeText(txt); alert('¡Invoice copiada!'); }
+  if (txt) {
+    navigator.clipboard.writeText(txt);
+    showToast('Invoice copiada', 'success');
+  }
 }
 
 function sats2btc(sats) { return (sats / 1e8).toFixed(8); }
