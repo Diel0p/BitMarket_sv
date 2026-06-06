@@ -41,3 +41,13 @@ router.get(
     include_in_schema=False,
 )(payment_controller.qr_code)
 
+router.post(
+    "/create-donation-invoice",
+    summary="Create a Lightning invoice for donations (public, no auth)",
+)(payment_controller.create_donation_invoice)
+
+router.get(
+    "/donation-status/{payment_hash}",
+    summary="Check donation payment status (public, no auth)",
+)(payment_controller.check_donation_status)
+

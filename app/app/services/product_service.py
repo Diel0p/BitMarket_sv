@@ -13,6 +13,9 @@ from app.app.utils.helpers import sats_to_btc, utcnow
 
 async def create_product(data: ProductCreateRequest, seller_id: str, db) -> dict:
     seller = db_find_one("users", id=seller_id)
+    if not seller or seller.get("role") != "seller" or not seller.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Seller account is not allowed to create products")
+
     doc = {
         "title":       data.title,
         "description": data.description,
@@ -72,6 +75,10 @@ async def get_product_by_id(product_id: str, db) -> dict:
     product = db_find_one("products", id=product_id)
     if not product or product.get("status") != "active":
         raise HTTPException(status_code=404, detail="Product not found")
+    seller = db_find_one("users", id=product.get("seller_id"))
+    if seller:
+        product["seller_store_name"] = seller.get("store_name")
+        product["seller_store_location"] = seller.get("store_location")
     return product
 
 
@@ -87,6 +94,11 @@ async def update_product(product_id: str, data: ProductUpdateRequest, seller_id:
         raise HTTPException(status_code=403, detail="You don't own this product")
 
     updates = data.model_dump(exclude_none=True)
+    for key in ("title", "description", "category"):
+        value = updates.get(key)
+        if isinstance(value, str):
+            updates[key] = value.strip()
+
     if "price_sats" in updates:
         updates["price_btc"] = sats_to_btc(updates["price_sats"])
 

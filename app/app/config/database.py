@@ -2,7 +2,7 @@
 PostgreSQL-backed document store (JSONB + SQL queries).
 
 Collections available:
-    users, products, orders, invoices
+    users, products, orders, invoices, carts, cart_orders
 """
 
 import json
@@ -16,7 +16,7 @@ from app.app.config.settings import get_settings
 
 
 settings = get_settings()
-_COLLECTIONS = ("users", "products", "orders", "invoices")
+_COLLECTIONS = ("users", "products", "orders", "invoices", "carts", "cart_orders")
 _conn: psycopg.Connection | None = None
 
 

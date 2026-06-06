@@ -31,12 +31,53 @@ async def get_product(product_id: str, db=Depends(get_db)):
     return {"success": True, "product": product}
 
 
+
+from fastapi import Form
+
+# Nuevo endpoint: acepta multipart/form-data
+from typing import Optional
+from fastapi import Form
+
 async def create_product(
-    data: ProductCreateRequest,
+    title: str = Form(...),
+    description: str = Form(...),
+    price_sats: int = Form(...),
+    category: str = Form(...),
+    stock: int = Form(...),
+    tags: Optional[str] = Form(""),
+    image: Optional[UploadFile] = File(None),
     current_user: dict = Depends(get_seller),
     db=Depends(get_db),
 ):
-    # Seller identity must come from auth context to prevent cross-account creation.
+    # Procesar imagen si viene
+    images = []
+    if image and image.filename:
+        suffix = Path(image.filename).suffix.lower()
+        if suffix not in _ALLOWED_IMAGE_SUFFIXES:
+            raise HTTPException(status_code=400, detail="Unsupported image format")
+        _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        filename = f"{current_user['id']}_{uuid.uuid4().hex}{suffix}"
+        file_path = _UPLOAD_DIR / filename
+        raw = await image.read()
+        if len(raw) > 5 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Image too large (max 5MB)")
+        with open(file_path, "wb") as f:
+            f.write(raw)
+        images = [f"/static/uploads/products/{filename}"]
+
+    # Procesar tags
+    tags_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
+
+    # Crear el producto
+    data = ProductCreateRequest(
+        title=title,
+        description=description,
+        price_sats=price_sats,
+        category=category,
+        stock=stock,
+        tags=tags_list,
+        images=images,
+    )
     product = await product_service.create_product(data, current_user["id"], db)
     return JSONResponse(status_code=201, content={"success": True, "product": product})
 

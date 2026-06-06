@@ -35,6 +35,7 @@ from app.app.routes import (
     order_routes,
     payment_routes,
     admin_routes,
+    cart_routes,
     ui_routes,
 )
 
@@ -125,6 +126,7 @@ app.include_router(product_routes.router, prefix=PREFIX)
 app.include_router(order_routes.router,   prefix=PREFIX)
 app.include_router(payment_routes.router, prefix=PREFIX)
 app.include_router(admin_routes.router,   prefix=PREFIX)
+app.include_router(cart_routes.router,    prefix=PREFIX)
 # â”€â”€ UI router (must come last â€” catches all remaining paths) â”€
 app.include_router(ui_routes.router)
 

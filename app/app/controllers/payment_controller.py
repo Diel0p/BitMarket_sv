@@ -121,8 +121,81 @@ async def qr_code(text: str):
     if len(payload) > 5000:
         return JSONResponse(status_code=400, content={"error": "QR payload too large"})
 
-    qr = segno.make(payload, error="m")
+    # Generate QR with high contrast for better camera recognition
+    qr = segno.make(payload, error="h", boost_error=False)
     out = io.BytesIO()
-    qr.save(out, kind="svg", scale=6, border=2)
+    qr.save(
+        out, 
+        kind="svg", 
+        scale=8,           # Larger scale for better definition
+        border=3,          # More border/quiet zone
+        dark="black",      # Pure black modules
+        light="white",     # Pure white background
+        xmldecl=False,     # Skip XML declaration for cleaner SVG
+    )
     return Response(content=out.getvalue().decode("utf-8"), media_type="image/svg+xml")
+
+
+async def create_donation_invoice(
+    data: CreateInvoiceRequest,
+    db=Depends(get_db),
+):
+    """
+    POST /api/payments/create-donation-invoice
+
+    Create a Lightning invoice for donations (public endpoint, no auth required).
+    Allows anyone to donate to the platform.
+
+    Body:
+        { "amount_sats": 50000, "memo": "Donación a BitMarket SV" }
+
+    Response:
+        {
+          "payment_hash": "...",
+          "payment_request": "lnbc...",
+          "amount_sats": 50000,
+          "expires_at": "...",
+          "is_mock": false
+        }
+    """
+    invoice_data = await payment_service.create_invoice(
+        amount_sats=data.amount_sats,
+        memo=data.memo or "Donación a BitMarket SV",
+        order_id="donation",
+    )
+
+    # Persist donation invoice metadata (no buyer_id since it's public)
+    db_insert("invoices", {
+        "order_id":        "donation",
+        "buyer_id":        None,  # Public donations don't require auth
+        "payment_hash":    invoice_data["payment_hash"],
+        "payment_request": invoice_data["payment_request"],
+        "amount_sats":     data.amount_sats,
+        "status":          "pending",
+        "expires_at":      invoice_data["expires_at"].isoformat(),
+        "is_mock":         invoice_data["is_mock"],
+        "paid_at":         None,
+        "created_at":      utcnow().isoformat(),
+    })
+
+    return {
+        "success": True,
+        "invoice": {
+            "payment_hash":    invoice_data["payment_hash"],
+            "payment_request": invoice_data["payment_request"],
+            "amount_sats":     data.amount_sats,
+            "status":          "pending",
+            "expires_at":      invoice_data["expires_at"].isoformat(),
+            "is_mock":         invoice_data["is_mock"],
+        },
+    }
+
+
+async def check_donation_status(payment_hash: str, db=Depends(get_db)):
+    """
+    GET /api/payments/donation-status/{payment_hash}
+    Check donation payment status (public endpoint, no auth required).
+    """
+    result = await check_and_confirm_payment(payment_hash, db)
+    return {"success": True, **result}
 

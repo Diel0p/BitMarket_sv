@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Mi Carrito{% endblock %}
+
+{% block content %}
+<div class="page-narrow">
+  <h1 class="section-title" style="margin-bottom:8px">🛒 Mi Carrito</h1>
+  <p class="text-muted text-sm" id="cart-expires-label" style="text-align:center;margin-bottom:28px"></p>
+
+  <div id="cart-content">
+    <div style="text-align:center"><div class="spinner"></div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let cartData = null;
+let expiryInterval = null;
+
+async function loadCart() {
+  try {
+    const data = await apiFetch('/cart');
+    cartData = data.cart;
+    renderCart();
+  } catch(e) {
+    if (e.status === 401) {
+      window.location.href = '/login';
+    } else {
+      document.getElementById('cart-content').innerHTML =
+        `<p class="text-muted" style="text-align:center">Error al cargar el carrito.</p>`;
+    }
+  }
+}
+
+function renderCart() {
+  const box = document.getElementById('cart-content');
+
+  if (!cartData || !cartData.items || cartData.items.length === 0) {
+    document.getElementById('cart-expires-label').textContent = '';
+    window.refreshCartCount?.();
+    box.innerHTML = `
+      <div style="text-align:center;padding:60px 20px">
+        <div style="font-size:4rem;margin-bottom:16px">🛒</div>
+        <h2 style="font-weight:600;margin-bottom:8px">Tu carrito está vacío</h2>
+        <p class="text-muted" style="margin-bottom:24px">Agrega productos para comenzar</p>
+        <a href="/products" class="btn btn-primary">Ver productos</a>
+      </div>
+    `;
+    return;
+  }
+
+  startExpiryTimer();
+
+  const items = cartData.items;
+  const totalUnits = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  
+  // Obtener tasa USD
+  fetchBtcUsdRate().then(rate => {
+  
+  const rows = items.map((item, idx) => {
+    const usdUnit = sats2usd(item.price_sats, rate);
+    return `
+    <div class="cart-item fade-in" id="item-${item.product_id}">
+      <div class="cart-item__info">
+        <span class="cart-item__title">${escHtml(item.title)}</span>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span class="text-muted text-sm">⚡ ${item.price_sats.toLocaleString()} sats/u</span>
+          ${usdUnit ? `<span class="text-xs" style="color:#16a34a">≈ $${usdUnit} USD c/u</span>` : ''}
+        </div>
+      </div>
+      <div class="cart-item__controls">
+        <button class="btn btn-ghost btn-sm qty-btn" onclick="changeQty('${item.product_id}', ${item.quantity - 1})">−</button>
+        <span class="cart-item__qty">${item.quantity}</span>
+        <button class="btn btn-ghost btn-sm qty-btn" onclick="changeQty('${item.product_id}', ${item.quantity + 1})">+</button>
+      </div>
+      <div class="cart-item__subtotal">⚡ ${item.subtotal_sats.toLocaleString()}</div>
+      <button class="btn btn-ghost btn-sm" onclick="removeItem('${item.product_id}')" title="Eliminar">🗑</button>
+    </div>
+  `;
+  }).join('');
+  
+  const totalUsd = sats2usd(cartData.total_sats, rate);
+
+  box.innerHTML = `
+    <div id="cart-items">${rows}</div>
+
+    <div class="cart-summary">
+      <div class="cart-summary__row">
+        <span>Subtotal (${totalUnits} articulo${totalUnits !== 1 ? 's' : ''})</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+          <span>⚡ ${cartData.total_sats.toLocaleString()} sats</span>
+          ${totalUsd ? `<span class="text-xs" style="color:#16a34a">≈ $${totalUsd} USD</span>` : ''}
+        </div>
+      </div>
+      <div class="cart-summary__row cart-summary__total">
+        <span>Total</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span>⚡ <strong>${cartData.total_sats.toLocaleString()}</strong> sats</span>
+          ${totalUsd ? `<span style="color:#16a34a;font-weight:600;font-size:1.1rem">$${totalUsd} USD</span>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
+        <a href="/products" class="btn btn-ghost btn-sm">Seguir comprando</a>
+        <button class="btn btn-outline btn-sm" onclick="clearCart()">Vaciar carrito</button>
+        <a href="/cart/checkout" class="btn btn-primary" style="flex:1;text-align:center">
+          Ir al checkout →
+        </a>
+      </div>
+    </div>
+  `;
+
+  window.refreshCartCount?.();
+  }); // Fin de fetchBtcUsdRate().then()
+}
+
+function startExpiryTimer() {
+  if (expiryInterval) clearInterval(expiryInterval);
+  if (!cartData || !cartData.expires_at) return;
+
+  const label = document.getElementById('cart-expires-label');
+  const expiry = new Date(cartData.expires_at);
+
+  function tick() {
+    const diff = Math.max(0, Math.floor((expiry - Date.now()) / 1000));
+    if (diff === 0) {
+      clearInterval(expiryInterval);
+      label.textContent = '⏰ Carrito expirado';
+      label.style.color = 'var(--error, #ef4444)';
+      cartData = null;
+      renderCart();
+      return;
+    }
+    const m = Math.floor(diff / 60).toString().padStart(2, '0');
+    const s = (diff % 60).toString().padStart(2, '0');
+    label.textContent = `⏱ El carrito expira en ${m}:${s}`;
+  }
+  tick();
+  expiryInterval = setInterval(tick, 1000);
+}
+
+async function changeQty(productId, newQty) {
+  if (newQty <= 0) { return removeItem(productId); }
+  try {
+    const data = await apiFetch(`/cart/items/${productId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ product_id: productId, quantity: newQty }),
+    });
+    cartData = data.cart;
+    renderCart();
+  } catch(e) {
+    showToast(e.message || 'Error al actualizar cantidad', 'error');
+  }
+}
+
+async function removeItem(productId) {
+  try {
+    const data = await apiFetch(`/cart/items/${productId}`, { method: 'DELETE' });
+    cartData = data.cart;
+    renderCart();
+  } catch(e) {
+    showToast(e.message || 'Error al eliminar item', 'error');
+  }
+}
+
+async function clearCart() {
+  const confirmed = await confirmAction('¿Vaciar carrito?', {
+    title: 'Vaciar carrito',
+    confirmText: 'Vaciar',
+  });
+  if (!confirmed) return;
+  try {
+    const data = await apiFetch('/cart', { method: 'DELETE' });
+    cartData = data.cart;
+    renderCart();
+    showToast('Carrito vaciado correctamente', 'success');
+  } catch(e) {
+    showToast(e.message || 'Error al vaciar carrito', 'error');
+  }
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Load on page ready
+document.addEventListener('DOMContentLoaded', loadCart);
+</script>
+
+<style>
+.cart-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+.cart-item__info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.cart-item__title { font-weight: 600; }
+.cart-item__controls { display: flex; align-items: center; gap: 8px; }
+.cart-item__qty { min-width: 24px; text-align: center; font-weight: 600; }
+.cart-item__subtotal { font-weight: 600; min-width: 120px; text-align: right; }
+.qty-btn { padding: 4px 10px; font-size: 1.1rem; line-height: 1; }
+
+.cart-summary {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-top: 20px;
+}
+.cart-summary__row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cart-summary__row:last-of-type { border-bottom: none; }
+.cart-summary__total { font-size: 1.1rem; font-weight: 700; padding-top: 12px; }
+</style>
+{% endblock %}

@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+<div class="page-narrow">
+  <h1 class="section-title" style="text-align:center;margin-bottom:8px">⚡ Checkout</h1>
+  <p class="text-muted text-sm" style="text-align:center;margin-bottom:28px">Revisa tu pedido y paga con Lightning</p>
+
+  <div id="checkout-content">
+    <div style="text-align:center"><div class="spinner"></div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let cartData = null;
+let pollInterval = null;
+let elapsed = 0;
+const INVOICE_TTL = 300;  // 5 minutos
+const MOCK_CONFIRM = 10;
+
+// ── Step 1: Load cart ──────────────────────────────────────
+async function loadCart() {
+  try {
+    const data = await apiFetch('/cart');
+    cartData = data.cart;
+    if (!cartData || !cartData.items || cartData.items.length === 0) {
+      showEmpty();
+    } else {
+      renderCheckoutForm();
+    }
+  } catch(e) {
+    if (e.status === 401) window.location.href = '/login';
+    else showError('Error al cargar el carrito');
+  }
+}
+
+function showEmpty() {
+  document.getElementById('checkout-content').innerHTML = `
+    <div style="text-align:center;padding:60px 20px">
+      <div style="font-size:3rem;margin-bottom:16px">🛒</div>
+      <h2>Carrito vacío</h2>
+      <a href="/products" class="btn btn-primary" style="margin-top:16px">Ver productos</a>
+    </div>
+  `;
+}
+
+function showError(msg) {
+  document.getElementById('checkout-content').innerHTML =
+    `<p class="text-muted" style="text-align:center">${msg}</p>`;
+}
+
+// ── Step 2: Shipping form ──────────────────────────────────
+function renderCheckoutForm() {
+  const items = cartData.items;
+  const rows = items.map(i => `
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span>${escHtml(i.title)} × ${i.quantity}</span>
+      <span>⚡ ${i.subtotal_sats.toLocaleString()}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('checkout-content').innerHTML = `
+    <div class="cart-summary" style="margin-bottom:20px">
+      <h3 style="margin-bottom:12px">Resumen del pedido</h3>
+      ${rows}
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem;padding-top:12px">
+        <span>Total</span>
+        <span>⚡ ${cartData.total_sats.toLocaleString()} sats</span>
+      </div>
+    </div>
+
+    <form id="shipping-form" class="card" style="padding:24px">
+      <h3 style="margin-bottom:16px">Dirección de envío</h3>
+
+      <div class="form-group">
+        <label class="form-label">Nombre completo</label>
+        <input class="form-input" id="f-name" type="text" placeholder="Nombre" minlength="2" maxlength="100" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Calle / Dirección</label>
+        <input class="form-input" id="f-street" type="text" placeholder="Calle y número" minlength="5" maxlength="255" required />
+      </div>
+      <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label class="form-label">Ciudad</label>
+          <input class="form-input" id="f-city" type="text" placeholder="Ciudad" minlength="2" maxlength="120" required />
+        </div>
+        <div>
+          <label class="form-label">País</label>
+          <input class="form-input" id="f-country" type="text" placeholder="País" minlength="2" maxlength="80" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Código postal (opcional)</label>
+        <input class="form-input" id="f-zip" type="text" placeholder="ZIP / CP" maxlength="20" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notas (opcional)</label>
+        <textarea class="form-input" id="f-notes" rows="2" maxlength="600" placeholder="Instrucciones especiales..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px">
+        Generar invoice Lightning →
+      </button>
+    </form>
+  `;
+
+  document.getElementById('shipping-form').addEventListener('submit', submitCheckout);
+}
+
+// ── Step 3: Submit checkout ────────────────────────────────
+async function submitCheckout(e) {
+  e.preventDefault();
+  const btn = e.target.querySelector('[type=submit]');
+  btn.disabled = true;
+  btn.textContent = 'Generando invoice…';
+
+  const sanitizeText = (value, { maxLength, minLength = 0, required = false, field = 'Campo' }) => {
+    const cleaned = String(value || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+    if (!cleaned) {
+      if (required) throw new Error(`${field} es obligatorio.`);
+      return null;
+    }
+    if (/[<>]/.test(cleaned)) throw new Error(`${field} contiene caracteres no permitidos.`);
+    if (cleaned.length < minLength) throw new Error(`${field} es demasiado corto.`);
+    if (cleaned.length > maxLength) throw new Error(`${field} excede el maximo permitido.`);
+    return cleaned;
+  };
+
+  try {
+    const payload = {
+      shipping_address: {
+        name: sanitizeText(document.getElementById('f-name').value, { field: 'Nombre', required: true, minLength: 2, maxLength: 100 }),
+        street: sanitizeText(document.getElementById('f-street').value, { field: 'Direccion', required: true, minLength: 5, maxLength: 255 }),
+        city: sanitizeText(document.getElementById('f-city').value, { field: 'Ciudad', required: true, minLength: 2, maxLength: 120 }),
+        country: sanitizeText(document.getElementById('f-country').value, { field: 'Pais', required: true, minLength: 2, maxLength: 80 }),
+        zip: sanitizeText(document.getElementById('f-zip').value, { field: 'Codigo postal', maxLength: 20 }),
+      },
+      notes: sanitizeText(document.getElementById('f-notes').value, { field: 'Notas', maxLength: 600 }),
+    };
+
+    const result = await apiFetch('/cart/checkout', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    renderInvoice(result);
+  } catch(err) {
+    btn.disabled = false;
+    btn.textContent = 'Generar invoice Lightning →';
+    showToast(err.message || 'Error al generar invoice', 'error');
+  }
+}
+
+// ── Step 4: Show invoice + poll ────────────────────────────
+function renderInvoice(result) {
+  const isMock = result.is_mock;
+  const amountSats = result.amount_sats;
+
+  document.getElementById('checkout-content').innerHTML = `
+    ${isMock ? `<div class="mock-banner">🟡 <strong>Mock mode</strong> — el pago se confirma automáticamente en ~${MOCK_CONFIRM} segundos.</div>` : ''}
+
+    <div class="invoice-box fade-in" id="invoice-box">
+      <p class="text-muted text-sm" style="margin-bottom:12px">Total a pagar</p>
+      <div class="invoice-amount">⚡ ${amountSats.toLocaleString()} <span style="font-size:1rem;color:var(--text-2)">sats</span></div>
+      <p class="text-muted text-sm mono" style="margin-top:4px">≈ ${sats2btc(amountSats)} BTC</p>
+
+      <div id="qr-wrap" style="margin:24px auto;width:200px;height:200px;background:white;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:16px">
+        <div class="spinner"></div>
+      </div>
+
+      <div class="invoice-string" id="invoice-str">Cargando…</div>
+      <button class="btn btn-ghost btn-sm" onclick="copyInvoice()" style="margin-bottom:20px">📋 Copiar invoice</button>
+
+      <hr />
+
+      <div class="payment-status-bar" id="status-bar">
+        <div class="spinner" style="width:16px;height:16px"></div>
+        <span id="status-text">Esperando pago…</span>
+      </div>
+
+      <div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)" id="expiry-label"></div>
+
+      ${isMock ? `<div style="margin-top:12px;background:var(--bg-surface);border-radius:var(--radius-sm);height:6px;overflow:hidden"><div id="progress-bar" style="height:100%;background:var(--orange);width:0%;transition:width 0.5s linear"></div></div>` : ''}
+    </div>
+
+    <div id="success-box" style="display:none" class="fade-in">
+      <div style="text-align:center;padding:40px;background:var(--bg-card);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius-xl);margin-top:16px">
+        <div style="font-size:4rem;margin-bottom:12px">⚡</div>
+        <h2 style="font-size:1.8rem;font-weight:700;color:var(--success);letter-spacing:-0.02em">¡Pago confirmado!</h2>
+        <p class="text-muted" style="margin-top:8px">Tu pedido ha sido registrado exitosamente.</p>
+        <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <a href="/orders" class="btn btn-primary">Ver mis pedidos</a>
+          <a href="/products" class="btn btn-outline">Seguir comprando</a>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Render QR
+  const strEl = document.getElementById('invoice-str');
+  const qrWrap = document.getElementById('qr-wrap');
+  const req = result.payment_request || '';
+  strEl.textContent = req;
+  if (req) {
+    const img = document.createElement('img');
+    img.alt = 'Lightning QR';
+    img.width = 180; img.height = 180;
+    img.style.maxWidth = '100%';
+    img.src = `/api/payments/qr?text=${encodeURIComponent(req)}`;
+    img.onerror = () => { qrWrap.innerHTML = `<span style="font-size:0.5rem;word-break:break-all">${req}</span>`; };
+    qrWrap.innerHTML = '';
+    qrWrap.appendChild(img);
+  }
+
+  // Expiry countdown
+  if (result.expires_at) {
+    const expiry = new Date(result.expires_at);
+    const label = document.getElementById('expiry-label');
+    const expiryTick = setInterval(() => {
+      const diff = Math.max(0, Math.floor((expiry - Date.now()) / 1000));
+      const m = Math.floor(diff / 60).toString().padStart(2,'0');
+      const s = (diff % 60).toString().padStart(2,'0');
+      label.textContent = diff > 0 ? `⏱ Invoice expira en ${m}:${s}` : '⏰ Invoice expirada';
+      if (diff === 0) clearInterval(expiryTick);
+    }, 1000);
+  }
+
+  // Progress bar (mock)
+  if (isMock) {
+    const bar = document.getElementById('progress-bar');
+    const ticker = setInterval(() => {
+      elapsed += 0.2;
+      if (bar) bar.style.width = Math.min(100, (elapsed / MOCK_CONFIRM) * 100) + '%';
+      if (elapsed >= MOCK_CONFIRM) clearInterval(ticker);
+    }, 200);
+  }
+
+  startPolling(result.payment_hash, isMock);
+}
+
+function startPolling(paymentHash, isMock) {
+  pollInterval = setInterval(() => pollStatus(paymentHash, isMock), 2000);
+}
+
+async function pollStatus(paymentHash, isMock) {
+  try {
+    const data = await apiFetch(`/cart/payment-status/${paymentHash}`);
+    if (data.paid) {
+      clearInterval(pollInterval);
+      document.getElementById('invoice-box').style.display = 'none';
+      document.getElementById('status-bar').style.display = 'none';
+      document.getElementById('success-box').style.display = 'block';
+      if (document.getElementById('progress-bar'))
+        document.getElementById('progress-bar').style.width = '100%';
+    } else if (data.expired) {
+      clearInterval(pollInterval);
+      showExpiredMessage();
+    } else {
+      const t = document.getElementById('status-text');
+      if (t) t.textContent = isMock
+        ? `Mock mode — confirmando en ~${Math.max(0, MOCK_CONFIRM - Math.round(elapsed))}s…`
+        : 'Esperando pago Lightning…';
+    }
+  } catch(_) {}
+}
+
+function showExpiredMessage() {
+  document.getElementById('invoice-box').style.display = 'none';
+  document.getElementById('status-bar').style.display = 'none';
+  const checkout = document.getElementById('checkout-content');
+  if (checkout) {
+    checkout.innerHTML = `
+      <div class="fade-in" style="text-align:center;padding:40px;background:var(--bg-card);border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius-xl);margin-top:16px">
+        <div style="font-size:3.5rem;margin-bottom:12px">⏱️</div>
+        <h2 style="font-size:1.6rem;font-weight:700;color:#ef4444;margin-bottom:8px">Invoice Expirado</h2>
+        <p class="text-muted" style="margin-bottom:24px;line-height:1.6">
+          El tiempo para pagar este invoice ha expirado (5 minutos).<br>
+          Tu carrito ha sido restaurado. Por favor, intenta de nuevo.
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button onclick="window.location.reload()" class="btn btn-primary">🔄 Reintentar</button>
+          <a href="/cart" class="btn btn-outline">🛒 Volver al carrito</a>
+          <a href="/products" class="btn btn-ghost">🏠 Seguir comprando</a>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function copyInvoice() {
+  const txt = document.getElementById('invoice-str')?.textContent;
+  if (txt) {
+    navigator.clipboard.writeText(txt);
+    showToast('Invoice copiada', 'success');
+  }
+}
+
+function sats2btc(sats) { return (sats / 1e8).toFixed(8); }
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+document.addEventListener('DOMContentLoaded', loadCart);
+</script>
+
+<style>
+.cart-summary {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+</style>
+{% endblock %}

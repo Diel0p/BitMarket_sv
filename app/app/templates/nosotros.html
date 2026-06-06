@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Nosotros{% endblock %}
+
+{% block content %}
+<section class="about-hero">
+  <div class="about-hero__bg"></div>
+  <div class="container about-hero__inner">
+    <p class="about-kicker">Conoce BitMarket SV</p>
+    <h1 class="about-title">Comercio local con pagos Lightning, simple y real.</h1>
+    <p class="about-sub">
+      BitMarket conecta compradores y vendedores para mover la economia local con Bitcoin Lightning:
+      pagos instantaneos, comisiones bajas y una experiencia clara para todos.
+    </p>
+    <div class="about-cta-row">
+      <a href="/products" class="btn btn-primary">Ver productos</a>
+      <a href="/register?role=seller" class="btn btn-outline">Quiero vender</a>
+    </div>
+  </div>
+</section>
+
+<section class="container page about-section">
+  <div class="about-grid">
+    <article class="about-card">
+      <h2>Nuestra mision</h2>
+      <p>
+        Dar a pequenos y medianos vendedores una vitrina digital moderna, con pagos en Bitcoin Lightning
+        que se confirman en segundos y permiten vender sin friccion.
+      </p>
+    </article>
+
+    <article class="about-card">
+      <h2>Como funciona</h2>
+      <ol class="about-steps">
+        <li><strong>Explora:</strong> el comprador encuentra productos en el catalogo.</li>
+        <li><strong>Paga:</strong> se genera una factura Lightning para pago rapido.</li>
+        <li><strong>Recibe:</strong> la orden se confirma y el vendedor gestiona el envio.</li>
+      </ol>
+    </article>
+
+    <article class="about-card">
+      <h2>Transparencia y seguridad</h2>
+      <p>
+        BitMarket mantiene trazabilidad basica de ordenes y pagos para que cada operacion tenga un estado claro.
+        Nuestro objetivo es que comprar y vender sea confiable desde el primer clic.
+      </p>
+    </article>
+
+    <article class="about-card">
+      <h2>Contacto y Apoyo</h2>
+      <p>Estamos construyendo junto a la comunidad Bitcoin de El Salvador.</p>
+      <p class="about-contact">
+        Correo: <a href="mailto:equipo@bitmarket.sv">equipo@bitmarket.sv</a>
+      </p>
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+        <p style="font-weight:600;margin-bottom:8px">💛 Apoya el desarrollo</p>
+        <p style="font-size:0.9rem;color:var(--text-2);margin-bottom:12px">
+          Este proyecto es desarrollado por estudiantes. Tu apoyo nos ayuda a mantenerlo y mejorarlo.
+        </p>
+        <a href="/donate" class="btn btn-primary" style="background:#f7931a">
+          ⚡ Donar con Lightning
+        </a>
+      </div>
+    </article>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.about-hero {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  padding: 74px 0 54px;
+  overflow: hidden;
+}
+.about-hero__bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(247,147,26,0.2), transparent 34%),
+    radial-gradient(circle at 78% 12%, rgba(247,147,26,0.14), transparent 30%),
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+  pointer-events: none;
+}
+.about-hero__inner {
+  position: relative;
+  max-width: 860px;
+}
+.about-kicker {
+  display: inline-block;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--orange);
+  border: 1px solid rgba(247,147,26,0.3);
+  background: rgba(247,147,26,0.08);
+  border-radius: 999px;
+  padding: 7px 14px;
+  margin-bottom: 18px;
+}
+.about-title {
+  font-size: clamp(1.85rem, 4vw, 3rem);
+  line-height: 1.14;
+  letter-spacing: -0.03em;
+  margin-bottom: 14px;
+}
+.about-sub {
+  max-width: 760px;
+  color: var(--text-2);
+  font-size: 1rem;
+}
+.about-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+.about-section {
+  padding-top: 42px;
+}
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.about-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+  padding: 24px 22px;
+}
+.about-card h2 {
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+}
+.about-card p {
+  color: var(--text-2);
+  font-size: 0.94rem;
+}
+.about-steps {
+  padding-left: 20px;
+  color: var(--text-2);
+  display: grid;
+  gap: 8px;
+  font-size: 0.94rem;
+}
+.about-steps strong {
+  color: var(--text-1);
+}
+.about-contact a {
+  color: var(--orange);
+}
+@media (max-width: 840px) {
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+{% endblock %}

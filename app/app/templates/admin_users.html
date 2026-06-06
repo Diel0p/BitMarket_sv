@@ -106,15 +106,23 @@ let currentRole = '';
 let userIndex = {};
 
 function formatPhoneInput(value) {
-  const digits = (value || '').replace(/\D/g, '');
-  if (digits.startsWith('503') && digits.length > 8) {
-    const local = digits.slice(3, 11);
+  const raw = (value || '').trim();
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+
+  if (raw.startsWith('+') || digits.startsWith('503')) {
+    const local = (digits.startsWith('503') ? digits.slice(3) : digits).slice(0, 8);
     if (local.length <= 4) return `+503 ${local}`;
     return `+503 ${local.slice(0, 4)}-${local.slice(4)}`;
   }
+
   const local = digits.slice(0, 8);
   if (local.length <= 4) return local;
   return `${local.slice(0, 4)}-${local.slice(4)}`;
+}
+
+function isValidSvPhone(value) {
+  return /^(?:\+503\s?)?[267]\d{3}-?\d{4}$/.test((value || '').trim());
 }
 
 function esc(v) {
@@ -212,7 +220,15 @@ function openCreateSuperModal() {
   if (phoneInput) {
     phoneInput.oninput = e => {
       e.target.value = formatPhoneInput(e.target.value);
+      if (e.target.value && !isValidSvPhone(e.target.value)) {
+        e.target.setCustomValidity('Numero invalido. Usa 7000-0000 o 2223-4567 (con o sin +503).');
+      } else {
+        e.target.setCustomValidity('');
+      }
     };
+    phoneInput.placeholder = '7000-0000';
+    phoneInput.pattern = '^(?:\\+503\\s?)?[267]\\d{3}-?\\d{4}$';
+    phoneInput.title = 'Usa formato salvadoreno de 8 digitos: 7000-0000 o 2223-4567';
   }
   document.getElementById('create-super-modal').style.display = 'flex';
 }
@@ -229,16 +245,50 @@ document.getElementById('super-form').addEventListener('submit', async e => {
   btn.textContent = 'Creando...';
   clearMsg('super-msg');
   try {
+    const cleanText = (value, maxLength, field, { required = false } = {}) => {
+      const cleaned = String(value || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+      if (!cleaned) {
+        if (required) throw new Error(`${field} es obligatorio.`);
+        return '';
+      }
+      if (/[<>]/.test(cleaned)) throw new Error(`${field} contiene caracteres no permitidos.`);
+      if (cleaned.length > maxLength) throw new Error(`${field} excede el maximo permitido.`);
+      return cleaned;
+    };
+
+    const name = cleanText(document.getElementById('su-name').value, 100, 'Nombre', { required: true });
+    const email = cleanText(document.getElementById('su-email').value, 160, 'Correo', { required: true }).toLowerCase();
+    const password = String(document.getElementById('su-password').value || '').trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error('Correo invalido.');
+    }
+    if (
+      password.length < 8 ||
+      !/[A-Z]/.test(password) ||
+      !/[a-z]/.test(password) ||
+      !/\d/.test(password) ||
+      !/[^A-Za-z0-9]/.test(password) ||
+      /\s/.test(password)
+    ) {
+      throw new Error('La contrasena debe tener 8+ caracteres, mayuscula, minuscula, numero y simbolo, sin espacios.');
+    }
+
     const payload = {
-      name: document.getElementById('su-name').value,
-      email: document.getElementById('su-email').value,
-      password: document.getElementById('su-password').value,
+      name,
+      email,
+      password,
     };
     const phone = document.getElementById('su-phone').value.trim();
     const department = document.getElementById('su-department').value;
-    const address = document.getElementById('su-address').value.trim();
-    if (phone) payload.phone = phone;
-    if (department) payload.department = department;
+    const address = cleanText(document.getElementById('su-address').value, 255, 'Direccion');
+    if (phone) {
+      if (!isValidSvPhone(phone)) {
+        throw new Error('Numero invalido. Usa 7000-0000 o 2223-4567 (con o sin +503).');
+      }
+      payload.phone = phone;
+    }
+    if (department) payload.department = cleanText(department, 80, 'Departamento');
     if (address) payload.address = address;
 
     await apiFetch('/admin/users/super', {

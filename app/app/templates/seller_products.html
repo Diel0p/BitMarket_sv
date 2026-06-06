@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}My Products{% endblock %}
+{% block title %}Mis productos{% endblock %}
 
 {% block content %}
 <div class="dash-layout">
@@ -14,10 +14,10 @@
   <main class="dash-main">
     <div class="section-header">
       <div>
-        <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">My products</h1>
+        <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">Mis productos</h1>
         <p class="text-muted text-sm" id="prod-count"></p>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="openCreateForm()">+ New product</button>
+      <button class="btn btn-primary btn-sm" onclick="openCreateForm()">+ Nuevo producto</button>
     </div>
 
     <!-- Create product form -->
@@ -40,6 +40,7 @@
               <label class="form-label">Price (satoshis) *</label>
               <input id="p-price" type="number" min="1" required placeholder="e.g. 50000" />
               <p class="form-hint" id="btc-hint"></p>
+              <p class="form-hint" id="usd-hint" style="color:#16a34a;font-weight:500"></p>
             </div>
             <div class="form-group">
               <label class="form-label">Stock *</label>
@@ -61,9 +62,9 @@
               <input id="p-tags" placeholder="bitcoin, hardware, rare" />
             </div>
             <div class="form-group" style="grid-column:1/-1">
-              <label class="form-label">Product image (optional)</label>
-              <input id="p-image" type="file" accept="image/*" />
-              <p class="form-hint">JPG, PNG, WEBP or GIF. Max 5MB.</p>
+              <label class="form-label">Product images (optional, up to 2)</label>
+              <input id="p-images" type="file" accept="image/*" multiple />
+              <p class="form-hint">JPG, PNG, WEBP or GIF. Max 5MB each.</p>
               <p class="form-hint" id="current-image"></p>
             </div>
           </div>
@@ -105,14 +106,35 @@ function resetProductForm() {
   document.getElementById('btc-hint').textContent = '';
 }
 
-// Live BTC preview
-document.addEventListener('DOMContentLoaded', () => {
+// Live BTC & USD preview
+document.addEventListener('DOMContentLoaded', async () => {
   const priceInput = document.getElementById('p-price');
-  if (priceInput) priceInput.addEventListener('input', e => {
-    const hint = document.getElementById('btc-hint');
-    const v = parseInt(e.target.value);
-    hint.textContent = v > 0 ? `≈ ${sats2btc(v)} BTC` : '';
-  });
+  
+  // Obtener tasa BTC/USD al cargar la página
+  const rate = await fetchBtcUsdRate();
+  
+  if (priceInput) {
+    priceInput.addEventListener('input', async e => {
+      const btcHint = document.getElementById('btc-hint');
+      const usdHint = document.getElementById('usd-hint');
+      const v = parseInt(e.target.value);
+      
+      if (v > 0) {
+        btcHint.textContent = `≈ ${sats2btc(v)} BTC`;
+        
+        // Mostrar conversión a USD para El Salvador
+        const currentRate = await fetchBtcUsdRate();
+        const usdAmount = sats2usd(v, currentRate);
+        if (usdAmount) {
+          usdHint.textContent = `≈ $${usdAmount} USD (El Salvador)`;
+        }
+      } else {
+        btcHint.textContent = '';
+        usdHint.textContent = '';
+      }
+    });
+  }
+  
   loadMyProducts();
 });
 
@@ -123,19 +145,27 @@ async function loadMyProducts() {
     window._productsById = Object.fromEntries(data.products.map(p => [p.id, p]));
     document.getElementById('prod-count').textContent = data.products.length + ' listings';
     if (!data.products.length) {
-      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📦</div><p>No products yet. Create your first listing!</p></div>';
+      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📦</div><p>Aun no tienes productos. Crea tu primera publicacion.</p></div>';
       return;
     }
+    // Obtener tasa USD actual para la tabla
+    const currentRate = await fetchBtcUsdRate();
+    
     wrap.innerHTML = `
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Product</th><th>Category</th><th>Price (sats)</th><th>Stock</th><th>Status</th><th>Action</th></tr></thead>
+          <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Action</th></tr></thead>
           <tbody>
             ${data.products.map(p => `
               <tr>
                 <td><strong style="font-size:0.875rem">${p.title}</strong></td>
                 <td class="text-muted text-sm">${p.category}</td>
-                <td><span class="mono text-orange text-sm">⚡ ${p.price_sats.toLocaleString()}</span></td>
+                <td>
+                  <div style="display:flex;flex-direction:column;gap:2px">
+                    <span class="mono text-orange text-sm">⚡ ${p.price_sats.toLocaleString()} sats</span>
+                    <span class="text-muted text-xs" style="color:#16a34a">≈ $${sats2usd(p.price_sats, currentRate)} USD</span>
+                  </div>
+                </td>
                 <td>${p.stock}</td>
                 <td>${statusPill(p.status)}</td>
                 <td>
@@ -173,33 +203,44 @@ function editProduct(id) {
   document.getElementById('form-title').textContent = 'Edit product';
   document.getElementById('create-btn').textContent = 'Save changes';
   document.getElementById('btc-hint').textContent = p.price_sats ? `≈ ${sats2btc(p.price_sats)} BTC` : '';
+  
+  // Mostrar USD al editar
+  if (p.price_sats) {
+    fetchBtcUsdRate().then(rate => {
+      const usdHint = document.getElementById('usd-hint');
+      const usdAmount = sats2usd(p.price_sats, rate);
+      if (usdHint && usdAmount) {
+        usdHint.textContent = `≈ $${usdAmount} USD (El Salvador)`;
+      }
+    });
+  }
 
   const currentImage = (p.images && p.images.length) ? p.images[0] : null;
   const imageEl = document.getElementById('current-image');
   imageEl.innerHTML = currentImage
-    ? `Current image: <a href="${currentImage}" target="_blank" rel="noopener">open</a> (upload a new one to replace)`
+    ? `Current images: ${(p.images || []).map((img, idx) => `<a href="${img}" target="_blank" rel="noopener">image ${idx + 1}</a>`).join(' · ')}`
     : 'No image uploaded yet.';
 
   document.getElementById('new-product-form').style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-async function uploadProductImageIfSelected() {
-  const input = document.getElementById('p-image');
-  const file = input?.files?.[0];
-  if (!file) return null;
+async function uploadImages(files) {
+  const imageUrls = [];
+  for (const file of files) {
+    const body = new FormData();
+    body.append('image', file);
 
-  const body = new FormData();
-  body.append('image', file);
-
-  const res = await fetch('/api/products/upload-image', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${auth.token}` },
-    body,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || data.message || 'Image upload failed');
-  return data.image_url;
+    const res = await fetch('/api/products/upload-image', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${auth.token}` },
+      body,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || data.message || 'Image upload failed');
+    imageUrls.push(data.image_url);
+  }
+  return imageUrls;
 }
 
 document.getElementById('product-form').addEventListener('submit', async e => {
@@ -210,34 +251,87 @@ document.getElementById('product-form').addEventListener('submit', async e => {
   btn.disabled = true; btn.textContent = isEdit ? 'Saving…' : 'Creating…';
   clearMsg('form-msg');
   try {
-    const imageUrl = await uploadProductImageIfSelected();
-    const tags = document.getElementById('p-tags').value
-      .split(',').map(t => t.trim()).filter(Boolean);
-    const payload = {
-      title: document.getElementById('p-title').value,
-      description: document.getElementById('p-desc').value,
-      price_sats: parseInt(document.getElementById('p-price').value),
-      stock: parseInt(document.getElementById('p-stock').value),
-      category: document.getElementById('p-category').value,
-      tags,
+    const cleanText = (value, maxLength, fieldLabel) => {
+      const cleaned = String(value || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
+      if (!cleaned) throw new Error(`${fieldLabel} es obligatorio.`);
+      if (cleaned.length > maxLength) throw new Error(`${fieldLabel} excede el maximo permitido.`);
+      if (/[<>]/.test(cleaned)) throw new Error(`${fieldLabel} contiene caracteres no permitidos.`);
+      return cleaned;
     };
 
+    const title = cleanText(document.getElementById('p-title').value, 200, 'Titulo');
+    const description = cleanText(document.getElementById('p-desc').value, 5000, 'Descripcion');
+    const category = cleanText(document.getElementById('p-category').value, 60, 'Categoria');
+    const price = parseInt(document.getElementById('p-price').value, 10);
+    const stock = parseInt(document.getElementById('p-stock').value, 10);
+
+    if (!Number.isInteger(price) || price <= 0 || price > 100000000000) {
+      throw new Error('Precio invalido.');
+    }
+    if (!Number.isInteger(stock) || stock < 0 || stock > 1000000) {
+      throw new Error('Stock invalido.');
+    }
+
+    const tags = document.getElementById('p-tags').value
+      .split(',')
+      .map(t => t.trim().toLowerCase())
+      .filter(Boolean);
+    if (tags.length > 15) throw new Error('Maximo 15 tags permitidos.');
+    if (tags.some(t => t.length > 30 || /[<>]/.test(t))) {
+      throw new Error('Tags invalidos.');
+    }
+
+    const imageInput = document.getElementById('p-images');
+    const imageFiles = Array.from(imageInput?.files || []);
+    if (imageFiles.length > 2) {
+      throw new Error('Solo puedes subir hasta 2 imagenes por producto.');
+    }
+    if (imageFiles.length) {
+      const maxBytes = 5 * 1024 * 1024;
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      for (const imageFile of imageFiles) {
+        if (!allowedTypes.includes(imageFile.type)) throw new Error('Formato de imagen no permitido.');
+        if (imageFile.size > maxBytes) throw new Error('Una imagen supera 5MB.');
+      }
+    }
+
     if (isEdit) {
-      if (imageUrl) payload.images = [imageUrl];
+      // Edicion por JSON; si se suben imagenes nuevas se reemplaza el arreglo completo.
+      const payload = {
+        title,
+        description,
+        price_sats: price,
+        stock,
+        category,
+        tags,
+      };
+      if (imageFiles.length) {
+        payload.images = await uploadImages(imageFiles);
+      }
       await apiFetch(`/products/${editingId}`, {
         method: 'PUT',
         body: JSON.stringify(payload)
       });
       showSuccess('form-msg', '✓ Product updated!');
     } else {
-      payload.images = imageUrl ? [imageUrl] : [];
-      await apiFetch('/products', {
+      // Crear producto: enviar todo como FormData
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('price_sats', String(price));
+      formData.append('stock', String(stock));
+      formData.append('category', category);
+      formData.append('tags', tags.join(','));
+      imageFiles.forEach(file => formData.append('images', file));
+      const res = await fetch('/api/products', {
         method: 'POST',
-        body: JSON.stringify(payload)
+        headers: { Authorization: `Bearer ${auth.token}` },
+        body: formData,
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || data.message || 'Error creating product');
       showSuccess('form-msg', '✓ Product created!');
     }
-
     setTimeout(() => {
       closeForm();
       resetProductForm();
@@ -253,14 +347,19 @@ document.getElementById('product-form').addEventListener('submit', async e => {
 
 async function toggleProductStatus(id, newStatus) {
   const label = newStatus === 'inactive' ? 'Deactivate' : 'Activate';
-  if (!confirm(`${label} this product?`)) return;
+  const confirmed = await confirmAction(`¿${label === 'Deactivate' ? 'Desactivar' : 'Activar'} este producto?`, {
+    title: 'Confirmar cambio',
+    confirmText: label === 'Deactivate' ? 'Desactivar' : 'Activar',
+  });
+  if (!confirmed) return;
   try {
     await apiFetch(`/products/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ status: newStatus })
     });
+    showToast('Estado actualizado correctamente', 'success');
     loadMyProducts();
-  } catch(e) { alert(e.message); }
+  } catch(e) { showToast(e.message || 'No se pudo actualizar el estado', 'error'); }
 }
 </script>
 {% endblock %}
