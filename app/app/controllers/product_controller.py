@@ -45,17 +45,27 @@ async def create_product(
     category: str = Form(...),
     stock: int = Form(...),
     tags: Optional[str] = Form(""),
+    images: list[UploadFile] = File(default=[]),
     image: Optional[UploadFile] = File(None),
     current_user: dict = Depends(get_seller),
     db=Depends(get_db),
 ):
-    # Procesar imagen si viene
-    images = []
+    # Procesar imagenes si vienen (maximo 2 para mostrar distintos angulos).
+    image_urls: list[str] = []
+    files = [img for img in images if img and img.filename]
     if image and image.filename:
+        files.append(image)
+    if len(files) > 2:
+        raise HTTPException(status_code=400, detail="Maximum 2 images allowed")
+
+    if files:
+        _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+    for image in files:
         suffix = Path(image.filename).suffix.lower()
         if suffix not in _ALLOWED_IMAGE_SUFFIXES:
             raise HTTPException(status_code=400, detail="Unsupported image format")
-        _UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
         filename = f"{current_user['id']}_{uuid.uuid4().hex}{suffix}"
         file_path = _UPLOAD_DIR / filename
         raw = await image.read()
@@ -63,7 +73,7 @@ async def create_product(
             raise HTTPException(status_code=400, detail="Image too large (max 5MB)")
         with open(file_path, "wb") as f:
             f.write(raw)
-        images = [f"/static/uploads/products/{filename}"]
+        image_urls.append(f"/static/uploads/products/{filename}")
 
     # Procesar tags
     tags_list = [t.strip() for t in tags.split(",") if t.strip()] if tags else []
@@ -76,7 +86,7 @@ async def create_product(
         category=category,
         stock=stock,
         tags=tags_list,
-        images=images,
+        images=image_urls,
     )
     product = await product_service.create_product(data, current_user["id"], db)
     return JSONResponse(status_code=201, content={"success": True, "product": product})

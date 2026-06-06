@@ -69,16 +69,28 @@ function filterCat(cat) {
 }
 
 async function loadFeatured() {
+  const grid = document.getElementById('featured-grid');
+  grid.innerHTML = ui.productGridSkeleton(8);
+
   try {
     const data = await apiFetch('/products?limit=8&sort=created_at');
-    const grid = document.getElementById('featured-grid');
     if (!data.products.length) {
-      grid.innerHTML = '<div class="empty-state"><p class="empty-state__icon">📦</p><p>No products yet. <a href="/register?role=seller" class="text-orange">Be the first seller!</a></p></div>';
+      grid.innerHTML = ui.emptyState({
+        icon: '📦',
+        title: 'Aun no hay productos',
+        description: 'Inicia el marketplace publicando el primer producto.',
+        actionHref: '/register?role=seller',
+        actionText: 'Ser el primer vendedor',
+      });
       return;
     }
     grid.innerHTML = data.products.map(productCard).join('');
   } catch(e) {
-    document.getElementById('featured-grid').innerHTML = '<p class="text-muted">Could not load products.</p>';
+    grid.innerHTML = ui.emptyState({
+      icon: '⚠️',
+      title: 'No se pudieron cargar productos',
+      description: 'Intenta recargar esta pagina en unos segundos.',
+    });
   }
 }
 

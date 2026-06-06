@@ -1,0 +1,653 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía Completa BitMarket SV</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 100%;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            page-break-after: avoid;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-bottom: 2px solid #95a5a6;
+            padding-bottom: 5px;
+            page-break-after: avoid;
+        }
+        h3 {
+            color: #7f8c8d;
+            margin-top: 20px;
+            page-break-after: avoid;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            page-break-inside: avoid;
+        }
+        pre code {
+            background-color: transparent;
+            color: #f8f8f2;
+            padding: 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        td {
+            padding: 10px;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        blockquote {
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+            padding: 10px 20px;
+            background-color: #ecf0f1;
+            font-style: italic;
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #bdc3c7;
+            margin: 30px 0;
+        }
+        .emoji {
+            font-size: 1.2em;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        @media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            pre {
+                page-break-inside: avoid;
+            }
+            h1, h2, h3 {
+                page-break-after: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+<h1 id="guia-completa-bitmarket-sv">📘 Guía Completa - BitMarket SV</h1>
+
+<h2 id="que-es-bitmarket-sv">📌 ¿Qué es BitMarket SV?</h2>
+
+<p>BitMarket SV es un <strong>marketplace multi-vendedor</strong> que permite:
+- 👤 Registro de compradores, vendedores y administradores
+- 🛍️ Publicar y vender productos
+- 💰 Pagos con Lightning Network (Bitcoin)
+- 📦 Gestión de órdenes y envíos
+- 🖼️ Subida de imágenes de productos</p>
+
+<hr />
+
+<h2 id="requisitos-previos-que-instalar">🔧 Requisitos Previos (Qué instalar)</h2>
+
+<h3 id="1-python-311-o-superior">1. <strong>Python 3.11 o superior</strong></h3>
+
+<ul>
+<li>Descargar desde: https://www.python.org/downloads/</li>
+<li>✅ Durante la instalación, marcar "Add Python to PATH"</li>
+</ul>
+
+<h3 id="2-postgresql-base-de-datos">2. <strong>PostgreSQL</strong> (Base de datos)</h3>
+
+<h4 id="instalacion-en-windows">Instalación en Windows:</h4>
+
+<ol>
+<li>Descargar desde: https://www.postgresql.org/download/windows/</li>
+<li>Ejecutar el instalador</li>
+<li>Durante la instalación:
+<ul>
+<li><strong>Puerto</strong>: 5432 (dejar por defecto)</li>
+<li><strong>Contraseña del superusuario (postgres)</strong>: Anotar esta contraseña (ejemplo: <code>Eliza-2026p</code>)</li>
+<li><strong>Locale</strong>: Spanish, El Salvador o el que prefieras</li>
+</ul></li>
+</ol>
+
+<h4 id="crear-la-base-de-datos">Crear la base de datos:</h4>
+
+<p>Después de instalar PostgreSQL, abrir <strong>pgAdmin 4</strong> o <strong>psql</strong> y ejecutar:</p>
+
+<div class="codehilite">
+<pre><span></span><code><span class="k">CREATE</span><span class="w"> </span><span class="k">DATABASE</span><span class="w"> </span><span class="n">bitmarket</span><span class="p">;</span>
+</code></pre>
+</div>
+
+<h3 id="3-git-opcional-para-clonar-el-proyecto">3. <strong>Git</strong> (opcional, para clonar el proyecto)</h3>
+
+<ul>
+<li>Descargar desde: https://git-scm.com/downloads</li>
+</ul>
+
+<hr />
+
+<h2 id="instalacion-del-sistema">🚀 Instalación del Sistema</h2>
+
+<h3 id="paso-1-obtener-el-codigo">Paso 1: Obtener el código</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="c"># Opción A: Si tienes el proyecto en una carpeta</span>
+<span class="nb">cd </span><span class="n">c</span><span class="p">:\</span><span class="n">Users</span><span class="p">\</span><span class="n">TU_USUARIO</span><span class="p">\</span><span class="n">Documents</span><span class="p">\</span><span class="n">BitMarket_sv_split</span>
+
+<span class="c"># Opción B: Si lo clonaste de Git</span>
+<span class="n">git</span> <span class="n">clone</span> <span class="no">[URL_DEL_REPOSITORIO]</span>
+<span class="nb">cd </span><span class="n">BitMarket_sv_split</span>
+</code></pre>
+</div>
+
+<h3 id="paso-2-crear-entorno-virtual">Paso 2: Crear entorno virtual</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="c"># Crear el entorno virtual</span>
+<span class="n">python</span> <span class="n">-m</span> <span class="n">venv</span> <span class="p">.</span><span class="n">venv</span>
+
+<span class="c"># Activarlo</span>
+<span class="p">.\.</span><span class="n">venv</span><span class="p">\</span><span class="n">Scripts</span><span class="p">\</span><span class="n">Activate</span><span class="p">.</span><span class="n">ps1</span>
+</code></pre>
+</div>
+
+<blockquote>
+  <p><strong>Nota</strong>: Si sale error de permisos en PowerShell, ejecutar:</p>
+  
+  <div class="codehilite">
+<pre><span></span><code><span class="nb">Set-ExecutionPolicy</span> <span class="n">-ExecutionPolicy</span> <span class="n">RemoteSigned</span> <span class="n">-Scope</span> <span class="n">CurrentUser</span>
+</code></pre>
+  </div>
+</blockquote>
+
+<h3 id="paso-3-instalar-dependencias">Paso 3: Instalar dependencias</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="n">pip</span> <span class="n">install</span> <span class="n">-r</span> <span class="n">requirements</span><span class="p">.</span><span class="n">txt</span>
+</code></pre>
+</div>
+
+<hr />
+
+<h2 id="configuracion-del-archivo-env">⚙️ Configuración del Archivo .env</h2>
+
+<p>El archivo <code>.env</code> contiene todas las configuraciones importantes del sistema.</p>
+
+<h3 id="como-editar-el-archivo-env">📝 Cómo editar el archivo .env</h3>
+
+<p>Abrir el archivo <code>.env</code> en la raíz del proyecto con un editor de texto (Notepad, VS Code, etc.)</p>
+
+<h3 id="datos-importantes-a-configurar">🔑 Datos Importantes a Configurar:</h3>
+
+<h4 id="1-base-de-datos-obligatorio">1. <strong>Base de Datos (OBLIGATORIO)</strong></h4>
+
+<pre><code>DATABASE_URL=postgresql://postgres:TU_CONTRASEÑA@localhost:5432/bitmarket
+</code></pre>
+
+<p><strong>Cambiar</strong>:
+- <code>TU_CONTRASEÑA</code> → La contraseña que pusiste cuando instalaste PostgreSQL
+- Ejemplo: <code>DATABASE_URL=postgresql://postgres:Eliza-2026p@localhost:5432/bitmarket</code></p>
+
+<h4 id="2-contrasena-secreta-secret_key">2. <strong>Contraseña Secreta (SECRET_KEY)</strong></h4>
+
+<pre><code>SECRET_KEY=dev-secret-key-change-in-production-please
+</code></pre>
+
+<p><strong>Para producción</strong>, cambiar por una contraseña fuerte generada aleatoriamente.
+Puedes generarla con:</p>
+
+<div class="codehilite">
+<pre><span></span><code><span class="n">python</span> <span class="n">-c</span> <span class="s2">&quot;import secrets; print(secrets.token_urlsafe(32))&quot;</span>
+</code></pre>
+</div>
+
+<h4 id="3-tiempo-de-expiracion-del-token-de-sesion">3. <strong>Tiempo de Expiración del Token de Sesión</strong></h4>
+
+<pre><code>ACCESS_TOKEN_EXPIRE_MINUTES=10080
+</code></pre>
+
+<ul>
+<li>Por defecto: 10,080 minutos = 7 días</li>
+<li>Cambiar a un número menor para más seguridad (ejemplo: 60 = 1 hora)</li>
+</ul>
+
+<h4 id="4-configuracion-de-lnbits-pagos-lightning">4. <strong>Configuración de LNbits (Pagos Lightning)</strong></h4>
+
+<p><strong>Modo REAL</strong> (con nodo Lightning real):</p>
+
+<pre><code>LNBITS_URL=https://lnbits.daxsosa.com
+LNBITS_ADMIN_KEY=050c5f69e7a14e4a9710e9a3b5c7ec1a
+</code></pre>
+
+<p><strong>Modo MOCK</strong> (pruebas sin dinero real):
+- Comentar las líneas de LNBITS<em>URL y LNBITS</em>ADMIN_KEY:</p>
+
+<pre><code>#LNBITS_URL=https://lnbits.daxsosa.com
+#LNBITS_ADMIN_KEY=050c5f69e7a14e4a9710e9a3b5c7ec1a
+</code></pre>
+
+<h4 id="5-tiempos-de-espera">5. <strong>Tiempos de Espera</strong></h4>
+
+<pre><code>MOCK_CONFIRM_SECONDS=10       # Tiempo para confirmar pago en modo MOCK
+INVOICE_EXPIRE_SECONDS=300    # Tiempo antes de expirar una factura (5 minutos)
+</code></pre>
+
+<h4 id="6-comision-de-la-plataforma">6. <strong>Comisión de la Plataforma</strong></h4>
+
+<pre><code>MARKETPLACE_FEE_PERCENT=3     # 3% de comisión en cada venta
+</code></pre>
+
+<hr />
+
+<h2 id="inicializar-la-base-de-datos">🗄️ Inicializar la Base de Datos</h2>
+
+<h3 id="paso-1-crear-las-tablas-y-el-usuario-administrador">Paso 1: Crear las tablas y el usuario administrador</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="n">python</span> <span class="n">app</span><span class="p">\</span><span class="n">bootstrap_db</span><span class="p">.</span><span class="n">py</span>
+</code></pre>
+</div>
+
+<p>Este comando:
+- ✅ Crea todas las tablas necesarias en PostgreSQL
+- ✅ Crea un usuario administrador por defecto</p>
+
+<p><strong>Datos del usuario administrador por defecto:</strong>
+- Email: <code>admin@bitmarket.sv</code>
+- Contraseña: <code>Admin1234!</code></p>
+
+<h3 id="paso-2-opcional-cargar-datos-de-prueba">Paso 2: (Opcional) Cargar datos de prueba</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="n">python</span> <span class="n">app</span><span class="p">\</span><span class="n">seed</span><span class="p">.</span><span class="n">py</span>
+</code></pre>
+</div>
+
+<p>Este comando crea:
+- 3 usuarios de prueba (comprador, vendedor, admin)
+- 15 productos de ejemplo
+- Algunas órdenes de prueba</p>
+
+<hr />
+
+<h2 id="como-ejecutar-el-sistema">▶️ Cómo Ejecutar el Sistema</h2>
+
+<h3 id="comando-para-iniciar-el-servidor">Comando para iniciar el servidor:</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="c"># Desde la raíz del proyecto</span>
+<span class="n">uvicorn</span> <span class="n">app</span><span class="p">.</span><span class="n">main</span><span class="p">:</span><span class="n">app</span> <span class="p">-</span><span class="n">-reload</span>
+</code></pre>
+</div>
+
+<h3 id="acceder-al-sistema">Acceder al sistema:</h3>
+
+<ul>
+<li><strong>Navegador web</strong>: http://localhost:8000</li>
+<li><strong>API (documentación)</strong>: http://localhost:8000/docs</li>
+</ul>
+
+<h3 id="para-detener-el-servidor">Para detener el servidor:</h3>
+
+<p>Presionar <code>Ctrl + C</code> en la terminal</p>
+
+<hr />
+
+<h2 id="usuarios-de-prueba-despues-de-ejecutar-seedpy">👥 Usuarios de Prueba (después de ejecutar seed.py)</h2>
+
+<h3 id="administrador">👨‍💼 Administrador</h3>
+
+<ul>
+<li>Email: <code>admin@bitmarket.sv</code></li>
+<li>Contraseña: <code>Admin1234!</code></li>
+<li>Acceso a: Panel de administración completo</li>
+</ul>
+
+<h3 id="comprador">🛒 Comprador</h3>
+
+<ul>
+<li>Email: <code>buyer@test.com</code></li>
+<li>Contraseña: <code>Test1234!</code></li>
+<li>Acceso a: Comprar productos, ver órdenes</li>
+</ul>
+
+<h3 id="vendedor">🏪 Vendedor</h3>
+
+<ul>
+<li>Email: <code>seller@test.com</code></li>
+<li>Contraseña: <code>Test1234!</code></li>
+<li>Acceso a: Crear productos, gestionar ventas</li>
+</ul>
+
+<hr />
+
+<h2 id="tiempos-de-espera-del-sistema">⏱️ Tiempos de Espera del Sistema</h2>
+
+<h3 id="1-confirmacion-de-pagos-modo-mock">1. <strong>Confirmación de Pagos (Modo MOCK)</strong></h3>
+
+<ul>
+<li><strong>Tiempo de espera</strong>: 10 segundos (configurable en <code>.env</code> con <code>MOCK_CONFIRM_SECONDS</code>)</li>
+<li>Después de crear una orden, el sistema simula un pago automáticamente</li>
+</ul>
+
+<h3 id="2-expiracion-de-facturas">2. <strong>Expiración de Facturas</strong></h3>
+
+<ul>
+<li><strong>Tiempo</strong>: 300 segundos (5 minutos)</li>
+<li>Si no se paga una factura en este tiempo, expira y debes crear una nueva orden</li>
+</ul>
+
+<h3 id="3-sesion-de-usuario">3. <strong>Sesión de Usuario</strong></h3>
+
+<ul>
+<li><strong>Duración</strong>: 10,080 minutos (7 días) por defecto</li>
+<li>Configurable en <code>.env</code> con <code>ACCESS_TOKEN_EXPIRE_MINUTES</code></li>
+</ul>
+
+<h3 id="4-polling-de-estado-de-pago">4. <strong>Polling de Estado de Pago</strong></h3>
+
+<ul>
+<li><strong>Frecuencia</strong>: Cada 3 segundos</li>
+<li>El sistema verifica automáticamente si un pago fue confirmado</li>
+</ul>
+
+<hr />
+
+<h2 id="flujo-completo-de-una-compra">🔄 Flujo Completo de una Compra</h2>
+
+<pre><code>1. COMPRADOR se registra/inicia sesión
+   ↓
+2. Navega el catálogo de productos
+   ↓
+3. Agrega productos al carrito
+   ↓
+4. Va a checkout (finalizar compra)
+   ↓
+5. Sistema genera una factura Lightning (código QR)
+   ↓
+6. COMPRADOR escanea código QR con su wallet Lightning
+   ↓
+7. Sistema detecta el pago (en 3 segundos si es modo real, 10 seg en mock)
+   ↓
+8. Orden confirmada, stock descontado
+   ↓
+9. VENDEDOR ve la orden en su panel
+   ↓
+10. VENDEDOR actualiza estado: pending → processing → shipped → delivered
+</code></pre>
+
+<hr />
+
+<h2 id="como-cambiar-datos-importantes">🛠️ Cómo Cambiar Datos Importantes</h2>
+
+<h3 id="cambiar-contrasena-del-administrador">Cambiar Contraseña del Administrador</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="n">python</span> <span class="n">app</span><span class="p">\</span><span class="n">bootstrap_db</span><span class="p">.</span><span class="n">py</span> <span class="p">-</span><span class="n">-email</span> <span class="n">admin</span><span class="nv">@bitmarket</span><span class="p">.</span><span class="nb">sv </span><span class="p">-</span><span class="n">-password</span> <span class="s2">&quot;NuevaContraseña123!&quot;</span> <span class="p">-</span><span class="n">-keep-password</span>
+</code></pre>
+</div>
+
+<h3 id="cambiar-puerto-del-servidor">Cambiar Puerto del Servidor</h3>
+
+<p>En el archivo <code>.env</code>:</p>
+
+<pre><code>APP_PORT=8080  # Cambiar de 8000 a 8080 o el que quieras
+</code></pre>
+
+<p>Luego ejecutar:</p>
+
+<div class="codehilite">
+<pre><span></span><code><span class="n">uvicorn</span> <span class="n">app</span><span class="p">.</span><span class="n">main</span><span class="p">:</span><span class="n">app</span> <span class="p">-</span><span class="n">-reload</span> <span class="p">-</span><span class="n">-port</span> <span class="n">8080</span>
+</code></pre>
+</div>
+
+<h3 id="cambiar-base-de-datos">Cambiar Base de Datos</h3>
+
+<p>Editar en <code>.env</code>:</p>
+
+<pre><code>DATABASE_URL=postgresql://usuario:contraseña@servidor:puerto/nombre_db
+</code></pre>
+
+<hr />
+
+<h2 id="compartir-el-proyecto-con-un-companero">📤 Compartir el Proyecto con un Compañero</h2>
+
+<h3 id="opcion-1-compartir-carpeta-completa">Opción 1: Compartir carpeta completa</h3>
+
+<ol>
+<li>Comprimir la carpeta <code>BitMarket_sv_split</code> en un archivo ZIP</li>
+<li>Compartir el ZIP</li>
+<li>Tu compañero debe:
+<ul>
+<li>Extraer el ZIP</li>
+<li>Instalar Python y PostgreSQL</li>
+<li>Crear la base de datos <code>bitmarket</code></li>
+<li>Editar el archivo <code>.env</code> con su contraseña de PostgreSQL</li>
+<li>Seguir los pasos de instalación (entorno virtual, dependencias, bootstrap)</li>
+</ul></li>
+</ol>
+
+<h3 id="opcion-2-compartir-por-git">Opción 2: Compartir por Git</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="c"># Si tienes un repositorio Git</span>
+<span class="n">git</span> <span class="n">add</span> <span class="p">.</span>
+<span class="n">git</span> <span class="n">commit</span> <span class="n">-m</span> <span class="s2">&quot;Versión compartible&quot;</span>
+<span class="n">git</span> <span class="n">push</span> <span class="n">origin</span> <span class="n">main</span>
+</code></pre>
+</div>
+
+<p>Tu compañero puede clonar:</p>
+
+<div class="codehilite">
+<pre><span></span><code><span class="n">git</span> <span class="n">clone</span> <span class="no">[URL_DEL_REPO]</span>
+<span class="nb">cd </span><span class="n">BitMarket_sv_split</span>
+</code></pre>
+</div>
+
+<h3 id="importante-no-compartir-el-archivo-env">⚠️ Importante: No compartir el archivo .env</h3>
+
+<p>El archivo <code>.env</code> contiene contraseñas y claves secretas. Tu compañero debe crear su propio <code>.env</code> con sus propios datos.</p>
+
+<p>Puedes crear un archivo <code>.env.example</code> sin datos sensibles:</p>
+
+<pre><code># Copiar este archivo como .env y completar con tus datos
+
+DATABASE_URL=postgresql://postgres:TU_CONTRASEÑA@localhost:5432/bitmarket
+SECRET_KEY=generar-clave-secreta-unica
+LNBITS_URL=https://tu-nodo.com
+LNBITS_ADMIN_KEY=tu-clave-admin
+</code></pre>
+
+<hr />
+
+<h2 id="como-probar-que-todo-funciona">🧪 Cómo Probar que Todo Funciona</h2>
+
+<h3 id="1-verificar-base-de-datos">1. Verificar base de datos</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="n">python</span> <span class="n">-c</span> <span class="s2">&quot;from app.app.config.database import connect_db; import asyncio; asyncio.run(connect_db()); print(&#39;✅ Conexión exitosa&#39;)&quot;</span>
+</code></pre>
+</div>
+
+<h3 id="2-ejecutar-tests">2. Ejecutar tests</h3>
+
+<div class="codehilite">
+<pre><span></span><code><span class="n">pytest</span> <span class="n">unit_tests</span><span class="p">/</span>
+</code></pre>
+</div>
+
+<h3 id="3-verificar-rutas-api">3. Verificar rutas API</h3>
+
+<p>Abrir navegador en: http://localhost:8000/docs
+Deberías ver la documentación interactiva de Swagger</p>
+
+<hr />
+
+<h2 id="problemas-comunes">🆘 Problemas Comunes</h2>
+
+<h3 id="error-no-module-named-app">Error: "No module named 'app'"</h3>
+
+<p><strong>Solución</strong>: Asegúrate de estar en la carpeta raíz del proyecto y de tener el entorno virtual activado.</p>
+
+<h3 id="error-could-not-connect-to-server-connection-refused">Error: "could not connect to server: Connection refused"</h3>
+
+<p><strong>Solución</strong>: PostgreSQL no está corriendo. Iniciar el servicio:</p>
+
+<div class="codehilite">
+<pre><span></span><code><span class="c"># Windows: Buscar &quot;Services&quot; y iniciar &quot;postgresql-x64-XX&quot;</span>
+<span class="c"># O reiniciar el servicio</span>
+<span class="n">net</span> <span class="nb">start </span><span class="n">postgresql-x64-XX</span>
+</code></pre>
+</div>
+
+<h3 id="error-access-is-denied-al-activar-entorno-virtual">Error: "Access is denied" al activar entorno virtual</h3>
+
+<p><strong>Solución</strong>: Cambiar política de ejecución:</p>
+
+<div class="codehilite">
+<pre><span></span><code><span class="nb">Set-ExecutionPolicy</span> <span class="n">-ExecutionPolicy</span> <span class="n">RemoteSigned</span> <span class="n">-Scope</span> <span class="n">CurrentUser</span>
+</code></pre>
+</div>
+
+<h3 id="la-pagina-no-carga-despues-de-ejecutar-uvicorn">La página no carga después de ejecutar uvicorn</h3>
+
+<p><strong>Solución</strong>: 
+1. Verificar que el puerto 8000 no esté ocupado
+2. Probar con otro puerto: <code>uvicorn app.main:app --reload --port 8001</code>
+3. Verificar que no haya errores en la terminal</p>
+
+<hr />
+
+<h2 id="estructura-del-proyecto">📚 Estructura del Proyecto</h2>
+
+<pre><code>BitMarket_sv_split/
+│
+├── .env                    ← Configuración (CAMBIAR AQUÍ)
+├── requirements.txt        ← Dependencias Python
+├── pytest.ini             ← Configuración de tests
+│
+├── app/
+│   ├── main.py            ← Punto de entrada del servidor
+│   ├── bootstrap_db.py    ← Script para inicializar DB
+│   ├── seed.py            ← Script para datos de prueba
+│   │
+│   └── app/
+│       ├── controllers/   ← Lógica de negocio
+│       ├── services/      ← Servicios (pagos, productos, etc.)
+│       ├── models/        ← Modelos de datos
+│       ├── routes/        ← Rutas de la API
+│       ├── templates/     ← Páginas HTML (Jinja2)
+│       ├── static/        ← CSS, JS, imágenes
+│       ├── config/        ← Configuración (DB, settings)
+│       └── middleware/    ← Autenticación JWT
+│
+├── logic/                 ← Documentación técnica
+└── unit_tests/           ← Tests automáticos
+</code></pre>
+
+<hr />
+
+<h2 id="comandos-rapidos-resumen">🚀 Comandos Rápidos (Resumen)</h2>
+
+<div class="codehilite">
+<pre><span></span><code><span class="c"># 1. Activar entorno virtual</span>
+<span class="p">.\.</span><span class="n">venv</span><span class="p">\</span><span class="n">Scripts</span><span class="p">\</span><span class="n">Activate</span><span class="p">.</span><span class="n">ps1</span>
+
+<span class="c"># 2. Instalar dependencias</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">-r</span> <span class="n">requirements</span><span class="p">.</span><span class="n">txt</span>
+
+<span class="c"># 3. Inicializar base de datos</span>
+<span class="n">python</span> <span class="n">app</span><span class="p">\</span><span class="n">bootstrap_db</span><span class="p">.</span><span class="n">py</span>
+
+<span class="c"># 4. Cargar datos de prueba (opcional)</span>
+<span class="n">python</span> <span class="n">app</span><span class="p">\</span><span class="n">seed</span><span class="p">.</span><span class="n">py</span>
+
+<span class="c"># 5. Ejecutar servidor</span>
+<span class="n">uvicorn</span> <span class="n">app</span><span class="p">.</span><span class="n">main</span><span class="p">:</span><span class="n">app</span> <span class="p">-</span><span class="n">-reload</span>
+
+<span class="c"># 6. Acceder al sistema</span>
+<span class="c"># Navegador: http://localhost:8000</span>
+</code></pre>
+</div>
+
+<hr />
+
+<h2 id="contacto-y-soporte">📞 Contacto y Soporte</h2>
+
+<p>Para más información sobre el proyecto, revisar:
+- <code>README.md</code> - Información general
+- <code>logic/OPERATIONAL_MODEL.md</code> - Modelo operativo
+- <code>logic/ARCHITECTURE.md</code> - Arquitectura técnica</p>
+
+<hr />
+
+<h2 id="checklist-para-tu-companero">✅ Checklist para Tu Compañero</h2>
+
+<ul>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Instalar Python 3.11+</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Instalar PostgreSQL</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Crear base de datos <code>bitmarket</code></li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Obtener el código del proyecto</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Crear archivo <code>.env</code> con sus datos</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Crear entorno virtual (<code>.venv</code>)</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Instalar dependencias (<code>pip install -r requirements.txt</code>)</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Ejecutar <code>bootstrap_db.py</code></li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Ejecutar servidor (<code>uvicorn app.main:app --reload</code>)</li>
+<li><input type="checkbox" class="task-list-item-checkbox" disabled> Probar login con admin@bitmarket.sv / Admin1234!</li>
+</ul>
+
+<hr />
+
+<p><strong>Última actualización</strong>: Junio 2026
+<strong>Versión del documento</strong>: 1.0</p>
+
+</body>
+</html>

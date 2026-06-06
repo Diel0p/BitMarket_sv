@@ -15,10 +15,18 @@
 async function loadOrders() {
   if (!auth.isLoggedIn()) { window.location.href = '/login'; return; }
   const el = document.getElementById('orders-list');
+  el.innerHTML = ui.cardListSkeleton(3);
+
   try {
     const data = await apiFetch('/orders/mine');
     if (!data.orders.length) {
-      el.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📦</div><p>No orders yet. <a href="/products" class="text-orange">Start shopping!</a></p></div>';
+      el.innerHTML = ui.emptyState({
+        icon: '📦',
+        title: 'Aun no tienes pedidos',
+        description: 'Explora productos y realiza tu primera compra.',
+        actionHref: '/products',
+        actionText: 'Ir al catalogo',
+      });
       return;
     }
     el.innerHTML = data.orders.map(order => `
@@ -49,7 +57,11 @@ async function loadOrders() {
       </div>
     `).join('');
   } catch(e) {
-    el.innerHTML = '<div class="alert alert-error">Could not load orders: ' + e.message + '</div>';
+    el.innerHTML = ui.emptyState({
+      icon: '⚠️',
+      title: 'No se pudieron cargar tus pedidos',
+      description: e.message || 'Intenta nuevamente en unos segundos.',
+    });
   }
 }
 
