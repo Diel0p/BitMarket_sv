@@ -46,12 +46,16 @@ function filterPay(f, btn) {
 
 async function loadOrders() {
   const wrap = document.getElementById('orders-wrap');
-  wrap.innerHTML = '<div style="text-align:center;padding:24px"><div class="spinner"></div></div>';
+  wrap.innerHTML = ui.tableSkeleton(6, 7);
   try {
     const qs = currentFilter ? `?payment_status=${currentFilter}` : '';
     const data = await apiFetch('/admin/orders' + qs);
     if (!data.orders.length) {
-      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">🛒</div><p>No orders found.</p></div>';
+      wrap.innerHTML = ui.emptyState({
+        icon: '🛒',
+        title: 'No se encontraron pedidos',
+        description: 'Ajusta los filtros o espera nuevas compras en el marketplace.',
+      });
       return;
     }
     wrap.innerHTML = `
@@ -76,7 +80,11 @@ async function loadOrders() {
       <p class="text-muted text-sm" style="margin-top:12px">${data.total} order(s) total</p>
     `;
   } catch(e) {
-    wrap.innerHTML = '<div class="alert alert-error">' + e.message + '</div>';
+    wrap.innerHTML = ui.emptyState({
+      icon: '⚠️',
+      title: 'No se pudo cargar el listado',
+      description: e.message || 'Intenta nuevamente.',
+    });
   }
 }
 

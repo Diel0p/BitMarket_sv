@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Admin — Users{% endblock %}
+{% block title %}Admin — Usuarios{% endblock %}
 
 {% block content %}
 <div class="dash-layout">
@@ -14,12 +14,12 @@
   </aside>
   <main class="dash-main">
     <div class="section-header">
-      <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">Users</h1>
+      <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">Usuarios</h1>
       <div style="display:flex;gap:8px">
         <button class="btn btn-primary btn-sm" onclick="openCreateSuperModal()">+ Super usuario</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterRole('',this)">All</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterRole('buyer',this)">Buyers</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterRole('seller',this)">Sellers</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterRole('',this)">Todos</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterRole('buyer',this)">Compradores</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterRole('seller',this)">Vendedores</button>
         <button class="btn btn-ghost btn-sm" onclick="filterRole('admin',this)">Admins</button>
       </div>
     </div>
@@ -30,8 +30,8 @@
     <div id="user-detail-modal" class="modal-overlay" style="display:none" onclick="closeUserDetail(event)">
       <div class="modal-card" onclick="event.stopPropagation()">
         <div class="modal-head">
-          <h3 id="detail-name" style="margin:0;font-size:1.05rem">User details</h3>
-          <button class="btn btn-ghost btn-sm" onclick="closeUserDetail()">Close</button>
+          <h3 id="detail-name" style="margin:0;font-size:1.05rem">Detalle de usuario</h3>
+          <button class="btn btn-ghost btn-sm" onclick="closeUserDetail()">Cerrar</button>
         </div>
         <div id="detail-body" class="detail-grid"></div>
       </div>
@@ -41,7 +41,7 @@
       <div class="modal-card" onclick="event.stopPropagation()">
         <div class="modal-head">
           <h3 style="margin:0;font-size:1.05rem">Crear super usuario</h3>
-          <button class="btn btn-ghost btn-sm" onclick="closeCreateSuperModal()">Close</button>
+          <button class="btn btn-ghost btn-sm" onclick="closeCreateSuperModal()">Cerrar</button>
         </div>
         <div style="padding:16px">
           <div id="super-msg"></div>
@@ -146,13 +146,13 @@ async function loadUsers() {
     const data = await apiFetch('/admin/users' + qs);
     userIndex = Object.fromEntries(data.users.map(u => [u.id, u]));
     if (!data.users.length) {
-      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">👥</div><p>No users found.</p></div>';
+      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">👥</div><p>No se encontraron usuarios.</p></div>';
       return;
     }
     wrap.innerHTML = `
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Nombre</th><th>Email</th><th>Telefono</th><th>Rol</th><th>Registro</th><th>Estado</th><th>Acciones</th></tr></thead>
           <tbody>
             ${data.users.map(u => `
               <tr>
@@ -166,13 +166,13 @@ async function loadUsers() {
                 <td class="text-sm">${u.phone ? esc(u.phone) : '<span class="text-muted">—</span>'}</td>
                 <td><span class="navbar__role-badge badge-${u.role}">${u.role}</span></td>
                 <td class="text-muted text-sm">${new Date(u.created_at).toLocaleDateString()}</td>
-                <td>${u.is_active ? '<span class="pill pill-active">Active</span>' : '<span class="pill pill-failed">Banned</span>'}</td>
+                <td>${u.is_active ? '<span class="pill pill-active">Activo</span>' : '<span class="pill pill-failed">Baneado</span>'}</td>
                 <td>
                   <div style="display:flex;gap:6px;flex-wrap:wrap">
                     <button class="btn btn-ghost btn-sm" onclick="showUserDetail('${u.id}')">Ver mas</button>
                     ${u.role !== 'admin' ? `
                       <button class="btn btn-sm ${u.is_active ? 'btn-danger' : 'btn-ghost'}" onclick="toggleUser('${u.id}')">
-                        ${u.is_active ? 'Ban' : 'Unban'}
+                        ${u.is_active ? 'Banear' : 'Desbanear'}
                       </button>
                     ` : ''}
                   </div>
@@ -182,7 +182,7 @@ async function loadUsers() {
           </tbody>
         </table>
       </div>
-      <p class="text-muted text-sm" style="margin-top:12px">${data.total} user(s) total</p>
+      <p class="text-muted text-sm" style="margin-top:12px">${data.total} usuario(s) en total</p>
     `;
   } catch(e) {
     wrap.innerHTML = '<div class="alert alert-error">' + e.message + '</div>';
@@ -312,8 +312,9 @@ document.getElementById('super-form').addEventListener('submit', async e => {
 async function toggleUser(id) {
   try {
     await apiFetch(`/admin/users/${id}/status`, { method: 'PATCH' });
+    showToast('Estado de usuario actualizado', 'success');
     loadUsers();
-  } catch(e) { alert(e.message); }
+  } catch(e) { showToast(e.message || 'No se pudo actualizar usuario', 'error'); }
 }
 
 document.addEventListener('DOMContentLoaded', loadUsers);

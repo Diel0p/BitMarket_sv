@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Seller Orders{% endblock %}
+{% block title %}Pedidos del vendedor{% endblock %}
 
 {% block content %}
 <div class="dash-layout">
@@ -12,7 +12,7 @@
     <a href="/products" class="dash-link">🌐 Marketplace</a>
   </aside>
   <main class="dash-main">
-    <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:24px">Orders</h1>
+    <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:24px">Pedidos</h1>
     <div id="orders-wrap">
       <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
     </div>
@@ -31,7 +31,7 @@ async function loadOrders() {
   try {
     const data = await apiFetch('/orders/seller');
     if (!data.orders.length) {
-      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📭</div><p>No orders yet.</p></div>';
+      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📭</div><p>Aun no tienes pedidos.</p></div>';
       return;
     }
     wrap.innerHTML = data.orders.map(o => `
@@ -57,7 +57,7 @@ async function loadOrders() {
           ` : `
             <div style="padding:8px 0;border-top:1px solid var(--border)">
               <p style="font-size:0.875rem">${item.title} ×${item.quantity}</p>
-              <p class="text-muted text-sm">Waiting for payment…</p>
+              <p class="text-muted text-sm">Esperando pago…</p>
             </div>
           `).join('')}
         </div>
@@ -74,7 +74,8 @@ async function updateFulfillment(orderId, idx, status) {
       method: 'PATCH',
       body: JSON.stringify({ item_index: idx, status })
     });
-  } catch(e) { alert(e.message); }
+    showToast('Estado de fulfillment actualizado', 'success');
+  } catch(e) { showToast(e.message || 'No se pudo actualizar fulfillment', 'error'); }
 }
 
 document.addEventListener('DOMContentLoaded', loadOrders);
