@@ -58,7 +58,7 @@ function renderInvoice() {
   box.innerHTML = `
     ${isMock ? `<div class="mock-banner">🟡 <strong>Modo mock</strong> — el pago se confirma automaticamente en ~${MOCK_CONFIRM} segundos. No necesitas Bitcoin real.</div>` : ''}
 
-    <div class="invoice-box fade-in">
+    <div class="invoice-box fade-in" id="invoice-box">
       <p class="text-muted text-sm" style="margin-bottom:12px">Total a pagar</p>
       <div class="invoice-amount">⚡ ${amountSats.toLocaleString()} <span style="font-size:1rem;color:var(--text-2)">sats</span></div>
       <p class="text-muted text-sm mono" style="margin-top:4px">≈ ${sats2btc(amountSats)} BTC</p>
@@ -130,10 +130,15 @@ async function pollStatus() {
     const data = await apiFetch(`/orders/payment-status/${hash}`);
     if (data.paid) {
       clearInterval(pollInterval);
+      document.getElementById('invoice-box').style.display = 'none';
       document.getElementById('status-bar').style.display = 'none';
       document.getElementById('success-box').style.display = 'block';
       if (document.getElementById('progress-bar'))
         document.getElementById('progress-bar').style.width = '100%';
+    } else if (data.expired) {
+      // Invoice expirado
+      clearInterval(pollInterval);
+      showExpiredMessage();
     } else {
       const t = document.getElementById('status-text');
       if (t) t.textContent = isMock
@@ -141,6 +146,24 @@ async function pollStatus() {
         : 'Esperando pago Lightning…';
     }
   } catch(_) {}
+}
+
+function showExpiredMessage() {
+  const box = document.getElementById('checkout-content');
+  box.innerHTML = `
+    <div class="fade-in" style="text-align:center;padding:40px;background:var(--bg-card);border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius-xl);margin-top:16px">
+      <div style="font-size:3.5rem;margin-bottom:12px">⏱️</div>
+      <h2 style="font-size:1.6rem;font-weight:700;color:#ef4444;margin-bottom:8px">Invoice Expirado</h2>
+      <p class="text-muted" style="margin-bottom:24px;line-height:1.6">
+        El tiempo para pagar este invoice ha expirado (5 minutos).<br>
+        Tu carrito ha sido restaurado. Por favor, intenta de nuevo.
+      </p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <a href="/cart" class="btn btn-primary">🛒 Volver al carrito</a>
+        <a href="/products" class="btn btn-outline">🏠 Ir al catálogo</a>
+      </div>
+    </div>
+  `;
 }
 
 function copyInvoice() {

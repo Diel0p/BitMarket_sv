@@ -12,23 +12,30 @@
 const productId = location.pathname.split('/').pop();
 
 async function loadProduct() {
+  // Obtener tasa BTC/USD
+  const rate = await fetchBtcUsdRate();
   const page = document.getElementById('product-page');
   try {
     const data = await apiFetch(`/products/${productId}`);
     const p = data.product;
     const emoji = { Electronics:'💻', Books:'📚', Art:'🎨', Gaming:'🎮', 'Art & Collectibles':'🎨' }[p.category] || '📦';
-    const coverImage = p.images && p.images.length ? p.images[0] : null;
+    const images = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+    const coverImage = images.length ? images[0] : null;
     const canBuy = auth.isLoggedIn() && auth.user?.role === 'buyer';
     const needLogin = !auth.isLoggedIn();
+    const thumbs = images.length > 1
+      ? `<div class="product-detail__thumbs">${images.map((img, idx) => `<button type="button" class="product-thumb ${idx === 0 ? 'active' : ''}" onclick="setMainImage('${img.replace(/'/g, "\\'")}', this)"><img src="${img}" alt="${p.title} angle ${idx + 1}" /></button>`).join('')}</div>`
+      : '';
 
     page.innerHTML = `
       <a href="/products" class="text-muted text-sm" style="display:inline-block;margin-bottom:24px">← Back to products</a>
       <div class="product-detail fade-in">
         <div class="product-detail__gallery">
           <div class="product-detail__img">${coverImage
-            ? `<img src="${coverImage}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" />`
+            ? `<img id="main-product-image" src="${coverImage}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" />`
             : emoji}
           </div>
+          ${thumbs}
         </div>
         <div class="product-detail__info">
           <p class="product-card__cat">${p.category}</p>
@@ -51,6 +58,7 @@ async function loadProduct() {
               <span class="price-unit"> sats</span>
             </div>
             <p class="text-muted text-sm mono" style="margin-top:4px">≈ ${sats2btc(p.price_sats)} BTC</p>
+            <p class="text-sm" style="margin-top:2px;color:#16a34a;font-weight:500" id="price-usd">Cargando precio USD...</p>
           </div>
 
           <div class="stock-indicator ${p.stock === 0 ? 'out' : p.stock < 5 ? 'low' : 'ok'}">
@@ -91,6 +99,15 @@ async function loadProduct() {
 
 let qty = 1;
 
+function setMainImage(url, thumbEl) {
+  const main = document.getElementById('main-product-image');
+  if (!main) return;
+  main.src = url;
+
+  document.querySelectorAll('.product-thumb').forEach(el => el.classList.remove('active'));
+  if (thumbEl) thumbEl.classList.add('active');
+}
+
 function resolveMapUrl(locationText) {
   const value = (locationText || '').trim();
   if (!value) return null;
@@ -102,7 +119,7 @@ function openSellerMap() {
   const locationText = window._product?.seller_store_location;
   const mapUrl = resolveMapUrl(locationText);
   if (!mapUrl) {
-    alert('Este vendedor no tiene ubicacion registrada.');
+    showToast('Este vendedor no tiene ubicacion registrada.', 'info');
     return;
   }
   window.open(mapUrl, '_blank', 'noopener');
@@ -127,7 +144,7 @@ async function addToCart() {
     window.refreshCartCount?.();
     showCartAddedPrompt();
   } catch(e) {
-    alert('Error: ' + (e.message || 'No se pudo agregar al carrito'));
+    showToast(e.message || 'No se pudo agregar al carrito', 'error');
   }
 }
 
@@ -171,7 +188,7 @@ async function buyNow() {
     });
     window.location.href = `/checkout/${order.order_id}?hash=${order.invoice.payment_hash}&amount=${order.invoice.amount_sats}&mock=${order.invoice.is_mock}`;
   } catch(e) {
-    alert('Error: ' + (e.message || 'No se pudo crear la orden'));
+    showToast(e.message || 'No se pudo crear la orden', 'error');
   }
 }
 
@@ -186,6 +203,30 @@ document.addEventListener('DOMContentLoaded', loadProduct);
   aspect-ratio: 4/3; background: var(--bg-card);
   border: 1px solid var(--border); border-radius: var(--radius-lg);
   display: flex; align-items: center; justify-content: center; font-size: 5rem;
+}
+.product-detail__thumbs {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.product-thumb {
+  width: 86px;
+  height: 70px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  padding: 0;
+  background: var(--bg-surface);
+}
+.product-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.product-thumb.active {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 1px rgba(247,147,26,0.3);
 }
 .product-detail__title { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; margin: 8px 0; }
 .price-box {

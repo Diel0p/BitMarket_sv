@@ -58,7 +58,10 @@ if (params.get('category')) filters.category = params.get('category');
 
 async function loadProducts() {
   const grid = document.getElementById('products-grid');
-  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px"><div class="spinner"></div></div>';
+  grid.innerHTML = ui.productGridSkeleton(10);
+
+  // Obtener tasa BTC/USD para mostrar precios en dólares
+  await fetchBtcUsdRate();
 
   const qs = new URLSearchParams();
   if (filters.q)        qs.set('q',        filters.q);
@@ -75,7 +78,11 @@ async function loadProducts() {
     document.getElementById('total-count').textContent = `${data.total} products`;
 
     if (!data.products.length) {
-      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state__icon">😕</div><p>No products found</p></div>';
+      grid.innerHTML = ui.emptyState({
+        icon: '🔎',
+        title: 'No encontramos productos',
+        description: 'Prueba otro filtro o cambia el termino de busqueda.',
+      });
     } else {
       grid.innerHTML = data.products.map(productCard).join('');
     }
@@ -91,7 +98,11 @@ async function loadProducts() {
       pagDiv.style.display = 'none';
     }
   } catch(e) {
-    grid.innerHTML = '<p class="text-muted" style="grid-column:1/-1">Could not load products.</p>';
+    grid.innerHTML = ui.emptyState({
+      icon: '⚠️',
+      title: 'No se pudo cargar el catalogo',
+      description: 'Revisa tu conexion e intenta de nuevo.',
+    });
   }
 }
 

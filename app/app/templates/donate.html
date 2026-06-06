@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+{% block title %}Apoyar el Proyecto{% endblock %}
+
+{% block content %}
+<div class="container page" style="max-width:800px">
+  <div style="text-align:center;margin-bottom:40px">
+    <div style="font-size:3rem;margin-bottom:16px">⚡💛</div>
+    <h1 style="font-size:2.2rem;font-weight:700;margin-bottom:12px">Apoya BitMarket SV</h1>
+    <p style="font-size:1.1rem;color:var(--text-2);max-width:600px;margin:0 auto">
+      Este proyecto es desarrollado por estudiantes de Cubo+ en El Salvador. 
+      Tu apoyo nos ayuda a mantener y mejorar la plataforma.
+    </p>
+  </div>
+
+  <!-- Formulario de donación -->
+  <div id="donation-form" class="card" style="margin-bottom:24px">
+    <div class="card-body" style="text-align:center">
+      <h2 style="font-size:1.3rem;margin-bottom:20px">Donar con Lightning Network</h2>
+      
+      <!-- Input monto personalizado -->
+      <div style="margin-bottom:24px">
+        <label style="display:block;font-size:0.9rem;color:var(--text-2);margin-bottom:8px">
+          Ingresa el monto a donar (satoshis):
+        </label>
+        <input 
+          type="number" 
+          id="custom-amount" 
+          placeholder="Ej: 50000"
+          min="1000"
+          step="1000"
+          style="width:100%;max-width:300px;padding:12px;border:2px solid var(--border);border-radius:8px;font-size:1.1rem;text-align:center"
+        />
+        <p id="custom-usd" style="font-size:0.85rem;color:#16a34a;margin-top:8px;min-height:20px"></p>
+      </div>
+
+      <!-- Montos sugeridos -->
+      <div style="margin-bottom:24px">
+        <p style="font-size:0.9rem;color:var(--text-2);margin-bottom:12px">O elige un monto sugerido:</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button onclick="selectAmount(10000)" class="btn btn-outline amount-btn" data-amount="10000">⚡ 10k</button>
+          <button onclick="selectAmount(25000)" class="btn btn-outline amount-btn" data-amount="25000">⚡ 25k</button>
+          <button onclick="selectAmount(50000)" class="btn btn-outline amount-btn" data-amount="50000">⚡ 50k</button>
+          <button onclick="selectAmount(100000)" class="btn btn-outline amount-btn" data-amount="100000">⚡ 100k</button>
+        </div>
+      </div>
+
+      <!-- Botón generar invoice -->
+      <button 
+        id="generate-btn" 
+        onclick="generateInvoice()" 
+        class="btn btn-primary"
+        style="font-size:1.1rem;padding:14px 32px"
+      >
+        🚀 Generar Invoice
+      </button>
+    </div>
+  </div>
+
+  <!-- Área de Invoice (oculta inicialmente) -->
+  <div id="invoice-area" class="card" style="margin-bottom:24px;display:none">
+    <div class="card-body" style="text-align:center">
+      <h2 style="font-size:1.3rem;margin-bottom:20px">Escanea para pagar</h2>
+      
+      <!-- Monto a pagar -->
+      <div style="margin-bottom:20px">
+        <p style="font-size:0.85rem;color:var(--text-3);margin:0">Monto a donar:</p>
+        <p style="font-size:1.8rem;font-weight:700;color:var(--orange);margin:8px 0">
+          ⚡ <span id="invoice-sats">0</span> sats
+        </p>
+        <p id="invoice-usd" style="font-size:1rem;color:#16a34a;margin:0"></p>
+      </div>
+
+      <!-- QR Code -->
+      <div id="qr-container" style="display:flex;justify-content:center;margin:24px 0">
+        <img id="qr-image" src="" alt="QR Code" style="border-radius:16px;max-width:320px;border:5px solid var(--orange);background:white;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,0.15)"/>
+      </div>
+
+      <!-- BOLT11 Invoice -->
+      <div style="margin:24px 0">
+        <p style="font-size:0.85rem;color:var(--text-3);margin-bottom:8px">BOLT11 Invoice:</p>
+        <div style="background:var(--bg-secondary);padding:12px 16px;border-radius:8px;font-family:monospace;font-size:0.75rem;word-break:break-all;max-height:100px;overflow-y:auto">
+          <span id="bolt11-text"></span>
+        </div>
+        <button onclick="copyInvoice()" class="btn btn-ghost btn-sm" style="margin-top:8px">
+          📋 Copiar Invoice
+        </button>
+      </div>
+
+      <!-- Estado del pago -->
+      <div id="payment-status" style="margin-top:24px;padding:16px;background:var(--bg-secondary);border-radius:8px">
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px">
+          <div class="spinner"></div>
+          <p style="margin:0;color:var(--text-2)">Esperando pago...</p>
+        </div>
+        <p id="timer-text" style="font-size:0.85rem;color:var(--text-3);margin-top:8px"></p>
+      </div>
+
+      <!-- Botón cancelar -->
+      <button onclick="cancelInvoice()" class="btn btn-ghost" style="margin-top:16px">
+        ← Cambiar monto
+      </button>
+    </div>
+  </div>
+
+  <!-- Mensaje de éxito (oculto inicialmente) -->
+  <div id="success-message" class="card" style="margin-bottom:24px;display:none;border:3px solid #16a34a">
+    <div class="card-body" style="text-align:center;padding:48px 24px">
+      <div style="font-size:4rem;margin-bottom:16px">🎉💚⚡</div>
+      <h2 style="font-size:2rem;font-weight:700;color:#16a34a;margin-bottom:12px">
+        ¡Donación Recibida!
+      </h2>
+      <p style="font-size:1.2rem;color:var(--text-2);margin-bottom:24px">
+        Gracias por apoyar BitMarket SV
+      </p>
+      <div style="background:var(--bg-secondary);padding:20px;border-radius:12px;margin-bottom:24px">
+        <p style="font-size:0.85rem;color:var(--text-3);margin:0">Has donado:</p>
+        <p style="font-size:1.8rem;font-weight:700;color:var(--orange);margin:8px 0">
+          ⚡ <span id="success-sats">0</span> sats
+        </p>
+        <p id="success-usd" style="font-size:1rem;color:#16a34a;margin:0"></p>
+      </div>
+      <p style="color:var(--text-2);line-height:1.6">
+        Tu apoyo nos ayuda a mantener y mejorar esta plataforma.<br>
+        ¡Cada satoshi cuenta! 💛
+      </p>
+      <button onclick="newDonation()" class="btn btn-primary" style="margin-top:24px">
+        💝 Hacer otra donación
+      </button>
+    </div>
+  </div>
+
+  <!-- Información adicional -->
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-body">
+      <h3 style="font-size:1.1rem;margin-bottom:16px">💡 ¿Para qué se usan las donaciones?</h3>
+      <ul style="color:var(--text-2);line-height:1.8">
+        <li>🖥️ Mantenimiento de servidores y base de datos</li>
+        <li>🔧 Mejoras y nuevas funcionalidades</li>
+        <li>🐛 Corrección de errores y optimización</li>
+        <li>📚 Documentación y tutoriales</li>
+        <li>☕ Café para los desarrolladores 😊</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Agradecimiento -->
+  <div style="text-align:center;padding:32px 20px;background:var(--bg-secondary);border-radius:12px">
+    <h3 style="font-size:1.2rem;margin-bottom:8px">🙏 ¡Gracias por tu apoyo!</h3>
+    <p style="color:var(--text-2);max-width:500px;margin:0 auto">
+      Cada satoshi cuenta y nos motiva a seguir construyendo herramientas útiles 
+      para la comunidad Bitcoin de El Salvador.
+    </p>
+  </div>
+
+  <div style="text-align:center;margin-top:32px">
+    <a href="/" class="btn btn-ghost">← Volver al inicio</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentInvoice = null;
+let pollInterval = null;
+let btcRate = null;
+
+// Actualizar USD cuando el usuario escribe en el input
+document.addEventListener('DOMContentLoaded', async () => {
+  btcRate = await fetchBtcUsdRate();
+  
+  const input = document.getElementById('custom-amount');
+  input.addEventListener('input', () => {
+    const sats = parseInt(input.value) || 0;
+    const usdEl = document.getElementById('custom-usd');
+    
+    if (sats > 0 && btcRate) {
+      const usd = sats2usd(sats, btcRate);
+      usdEl.textContent = `≈ $${usd} USD`;
+      usdEl.style.color = '#16a34a';
+    } else {
+      usdEl.textContent = '';
+    }
+  });
+});
+
+// Seleccionar monto sugerido
+function selectAmount(sats) {
+  const input = document.getElementById('custom-amount');
+  input.value = sats;
+  
+  // Disparar evento para actualizar USD
+  input.dispatchEvent(new Event('input'));
+  
+  // Highlight del botón seleccionado
+  document.querySelectorAll('.amount-btn').forEach(btn => {
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-outline');
+  });
+  event.target.classList.remove('btn-outline');
+  event.target.classList.add('btn-primary');
+}
+
+// Generar invoice
+async function generateInvoice() {
+  const sats = parseInt(document.getElementById('custom-amount').value);
+  
+  if (!sats || sats < 1000) {
+    alert('⚠️ Por favor ingresa un monto válido (mínimo 1,000 sats)');
+    return;
+  }
+  
+  const btn = document.getElementById('generate-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generando...';
+  
+  try {
+    const response = await fetch('/api/payments/create-donation-invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        order_id: 'donation',
+        amount_sats: sats,
+        memo: `Donación a BitMarket SV - ${sats} sats`
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      currentInvoice = data.invoice;
+      showInvoice(sats);
+      startPolling();
+    } else {
+      throw new Error(data.error || 'Error al generar invoice');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('❌ Error al generar el invoice. Por favor intenta de nuevo.');
+    btn.disabled = false;
+    btn.textContent = '🚀 Generar Invoice';
+  }
+}
+
+// Mostrar invoice
+function showInvoice(sats) {
+  // Ocultar formulario
+  document.getElementById('donation-form').style.display = 'none';
+  
+  // Mostrar área de invoice
+  const invoiceArea = document.getElementById('invoice-area');
+  invoiceArea.style.display = 'block';
+  
+  // Actualizar datos
+  document.getElementById('invoice-sats').textContent = sats.toLocaleString();
+  
+  if (btcRate) {
+    const usd = sats2usd(sats, btcRate);
+    document.getElementById('invoice-usd').textContent = `≈ $${usd} USD`;
+  }
+  
+  // Generar QR code usando endpoint del backend
+  const qrUrl = `/api/payments/qr?text=${encodeURIComponent(currentInvoice.payment_request)}`;
+  document.getElementById('qr-image').src = qrUrl;
+  
+  // Mostrar BOLT11
+  document.getElementById('bolt11-text').textContent = currentInvoice.payment_request;
+  
+  // Scroll al invoice
+  invoiceArea.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Polling para verificar el pago
+function startPolling() {
+  let elapsed = 0;
+  const maxWait = 300; // 5 minutos
+  
+  pollInterval = setInterval(async () => {
+    elapsed += 2;
+    
+    // Actualizar timer
+    const remaining = maxWait - elapsed;
+    const minutes = Math.floor(remaining / 60);
+    const seconds = remaining % 60;
+    document.getElementById('timer-text').textContent = 
+      `Expira en ${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    // Verificar estado
+    try {
+      const response = await fetch(`/api/payments/donation-status/${currentInvoice.payment_hash}`);
+      const data = await response.json();
+      
+      if (data.paid) {
+        clearInterval(pollInterval);
+        showSuccess();
+      }
+    } catch (error) {
+      console.error('Error checking payment:', error);
+    }
+    
+    // Expirado
+    if (elapsed >= maxWait) {
+      clearInterval(pollInterval);
+      alert('⏱️ El invoice ha expirado. Por favor genera uno nuevo.');
+      cancelInvoice();
+    }
+  }, 2000);
+}
+
+// Mostrar mensaje de éxito
+function showSuccess() {
+  const sats = parseInt(document.getElementById('invoice-sats').textContent.replace(/,/g, ''));
+  
+  // Ocultar invoice
+  document.getElementById('invoice-area').style.display = 'none';
+  
+  // Mostrar mensaje de éxito
+  const successMsg = document.getElementById('success-message');
+  successMsg.style.display = 'block';
+  
+  document.getElementById('success-sats').textContent = sats.toLocaleString();
+  
+  if (btcRate) {
+    const usd = sats2usd(sats, btcRate);
+    document.getElementById('success-usd').textContent = `≈ $${usd} USD`;
+  }
+  
+  // Scroll al mensaje
+  successMsg.scrollIntoView({ behavior: 'smooth' });
+  
+  // Confetti simple (puedes mejorar esto)
+  console.log('🎉 ¡Donación confirmada!');
+}
+
+// Cancelar y volver al formulario
+function cancelInvoice() {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+  }
+  
+  document.getElementById('invoice-area').style.display = 'none';
+  document.getElementById('donation-form').style.display = 'block';
+  
+  const btn = document.getElementById('generate-btn');
+  btn.disabled = false;
+  btn.textContent = '🚀 Generar Invoice';
+  
+  currentInvoice = null;
+  
+  // Scroll al formulario
+  document.getElementById('donation-form').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Nueva donación
+function newDonation() {
+  document.getElementById('success-message').style.display = 'none';
+  document.getElementById('donation-form').style.display = 'block';
+  document.getElementById('custom-amount').value = '';
+  document.getElementById('custom-usd').textContent = '';
+  
+  // Reset botones
+  document.querySelectorAll('.amount-btn').forEach(btn => {
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-outline');
+  });
+  
+  const btn = document.getElementById('generate-btn');
+  btn.disabled = false;
+  btn.textContent = '🚀 Generar Invoice';
+  
+  currentInvoice = null;
+  
+  // Scroll al formulario
+  document.getElementById('donation-form').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Copiar invoice
+function copyInvoice() {
+  const text = document.getElementById('bolt11-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    alert('✅ Invoice copiado al portapapeles!');
+  }).catch(err => {
+    console.error('Error al copiar:', err);
+  });
+}
+</script>
+
+<style>
+.amount-btn:hover {
+  background: var(--orange-glow);
+  color: var(--orange);
+  border-color: var(--orange);
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--border);
+  border-top-color: var(--orange);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+#custom-amount:focus {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px var(--orange-glow);
+}
+
+#qr-image {
+  transition: transform 0.2s ease;
+}
+
+#qr-image:hover {
+  transform: scale(1.05);
+}
+</style>
+{% endblock %}

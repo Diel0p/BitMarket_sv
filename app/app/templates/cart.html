@@ -53,11 +53,20 @@ function renderCart() {
 
   const items = cartData.items;
   const totalUnits = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-  const rows = items.map((item, idx) => `
+  
+  // Obtener tasa USD
+  fetchBtcUsdRate().then(rate => {
+  
+  const rows = items.map((item, idx) => {
+    const usdUnit = sats2usd(item.price_sats, rate);
+    return `
     <div class="cart-item fade-in" id="item-${item.product_id}">
       <div class="cart-item__info">
         <span class="cart-item__title">${escHtml(item.title)}</span>
-        <span class="text-muted text-sm">⚡ ${item.price_sats.toLocaleString()} sats/u</span>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span class="text-muted text-sm">⚡ ${item.price_sats.toLocaleString()} sats/u</span>
+          ${usdUnit ? `<span class="text-xs" style="color:#16a34a">≈ $${usdUnit} USD c/u</span>` : ''}
+        </div>
       </div>
       <div class="cart-item__controls">
         <button class="btn btn-ghost btn-sm qty-btn" onclick="changeQty('${item.product_id}', ${item.quantity - 1})">−</button>
@@ -67,7 +76,10 @@ function renderCart() {
       <div class="cart-item__subtotal">⚡ ${item.subtotal_sats.toLocaleString()}</div>
       <button class="btn btn-ghost btn-sm" onclick="removeItem('${item.product_id}')" title="Eliminar">🗑</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
+  
+  const totalUsd = sats2usd(cartData.total_sats, rate);
 
   box.innerHTML = `
     <div id="cart-items">${rows}</div>
@@ -75,11 +87,17 @@ function renderCart() {
     <div class="cart-summary">
       <div class="cart-summary__row">
         <span>Subtotal (${totalUnits} articulo${totalUnits !== 1 ? 's' : ''})</span>
-        <span>⚡ ${cartData.total_sats.toLocaleString()} sats</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+          <span>⚡ ${cartData.total_sats.toLocaleString()} sats</span>
+          ${totalUsd ? `<span class="text-xs" style="color:#16a34a">≈ $${totalUsd} USD</span>` : ''}
+        </div>
       </div>
       <div class="cart-summary__row cart-summary__total">
         <span>Total</span>
-        <span>⚡ <strong>${cartData.total_sats.toLocaleString()}</strong> sats</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span>⚡ <strong>${cartData.total_sats.toLocaleString()}</strong> sats</span>
+          ${totalUsd ? `<span style="color:#16a34a;font-weight:600;font-size:1.1rem">$${totalUsd} USD</span>` : ''}
+        </div>
       </div>
       <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
         <a href="/products" class="btn btn-ghost btn-sm">Seguir comprando</a>
@@ -92,6 +110,7 @@ function renderCart() {
   `;
 
   window.refreshCartCount?.();
+  }); // Fin de fetchBtcUsdRate().then()
 }
 
 function startExpiryTimer() {

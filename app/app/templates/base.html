@@ -6,7 +6,7 @@
   <title>{% block title %}BitMarket SV{% endblock %} — ⚡ Bitcoin Marketplace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/app.css" />
+  <link rel="stylesheet" href="/static/css/app.css?v=20260603" />
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -26,6 +26,7 @@
 
     <nav class="navbar__actions" id="navbar-auth">
       <!-- hydrated by app.js -->
+      <a href="/nosotros" class="navbar__link">Nosotros</a>
       <a href="/cart" class="navbar__link" id="cart-nav-link" title="Carrito" style="display:none">🛒</a>
       <a href="/login"    class="navbar__link">Login</a>
       <a href="/register" class="navbar__btn">Sign up</a>
@@ -47,12 +48,18 @@
         <a href="#" aria-label="Nostr" class="icon-link">◎</a>
         <a href="#" aria-label="YouTube" class="icon-link">▶</a>
       </div>
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+        <a href="/donate" class="btn btn-sm" style="background:#f7931a;color:#fff;display:inline-flex;align-items:center;gap:8px;font-weight:600">
+          ⚡ Apoyar el proyecto
+        </a>
+        <p style="font-size:0.75rem;margin-top:8px;color:var(--text-3)">Donaciones en Bitcoin Lightning</p>
+      </div>
     </div>
 
   </div>
 </footer>
 
-<script src="/static/js/app.js"></script>
+<script src="/static/js/app.js?v=20260605002"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

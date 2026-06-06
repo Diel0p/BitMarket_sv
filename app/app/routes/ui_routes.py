@@ -43,6 +43,16 @@ async def products(request: Request):
     return _r(request, "products.html")
 
 
+@router.get("/nosotros", response_class=HTMLResponse)
+async def about_us(request: Request):
+    return _r(request, "nosotros.html")
+
+
+@router.get("/donate", response_class=HTMLResponse)
+async def donate(request: Request):
+    return _r(request, "donate.html")
+
+
 @router.get("/products/{product_id}", response_class=HTMLResponse)
 async def product_detail(request: Request, product_id: str):
     return _r(request, "product_detail.html")
