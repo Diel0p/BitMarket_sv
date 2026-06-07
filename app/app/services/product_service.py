@@ -78,7 +78,6 @@ async def get_product_by_id(product_id: str, db) -> dict:
     seller = db_find_one("users", id=product.get("seller_id"))
     if seller:
         product["seller_store_name"] = seller.get("store_name")
-        product["seller_store_location"] = seller.get("store_location")
     return product
 
 

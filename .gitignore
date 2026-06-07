@@ -24,7 +24,6 @@ ENV/
 # ── Database ──────────────────────────────────────────────
 *.db
 *.sqlite3
-!app/data/bitmarket.db
 
 # ── Testing ───────────────────────────────────────────────
 .pytest_cache/

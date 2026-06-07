@@ -17,9 +17,9 @@
 
 ### Phase 3 — Database decision
 - Initial implementation used MongoDB (Motor async driver)
-- Replaced with SQLite-backed document store (`app/data/bitmarket.db`)
-- Documents stored as JSON inside SQLite tables; exposes same `db_insert/db_find_one/db_find_all/db_update` API
-- Decision rationale: eliminates external dependency, data persists across restarts, without changing any service or controller code
+- Replaced with PostgreSQL-backed document store (JSONB)
+- Documents stored as JSONB inside collection-like tables; exposes same `db_insert/db_find_one/db_find_all/db_update` API
+- Decision rationale: production-aligned engine, robust indexing, without changing service/controller code
 - Migration path documented: only `database.py` needs to change
 
 ### Phase 4 — Demo hardening
@@ -40,14 +40,14 @@
 | Decision | Alternative considered | Reason chosen |
 |----------|----------------------|---------------|
 | FastAPI | Flask | Async, auto-docs, Pydantic integration |
-| SQLite DB | MongoDB | Zero setup for demo, data persists, trivially swappable |
+| PostgreSQL JSONB | MongoDB | Production-friendly, strong indexing, still swappable at helper layer |
 | Direct bcrypt | passlib | passlib broke with bcrypt 4.x on Python 3.12 |
 | Mock payment mode | Require real LNbits | Demo must work without any external services |
 | JWT in headers | Session cookies | Stateless, works with any client including curl |
 
 ## Known limitations (MVP scope)
 
-- SQLite is single-writer; not suitable for high-concurrency multi-process deployments
+- Some business flows still need stronger transactional guarantees under high concurrency
 - No file upload for product images (placeholder field exists)
 - No email notifications
 - No rate limiting (add `slowapi` for production)
@@ -57,7 +57,7 @@
 
 ```bash
 git commit -m "chore: move main.py to src/, update all imports"
-git commit -m "feat(db): replace MongoDB with SQLite-backed document store for demo reliability"
+git commit -m "feat(db): replace MongoDB with PostgreSQL-backed JSONB document store"
 git commit -m "fix(auth): replace passlib with direct bcrypt for Python 3.12 compat"
 git commit -m "test: all 15 integration tests passing, zero external dependencies"
 git commit -m "docs: add strategy folder with architecture, impact, and operational docs"

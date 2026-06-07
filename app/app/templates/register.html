@@ -76,14 +76,6 @@
           <label class="form-label">Store name</label>
           <input type="text" id="store-name" placeholder="Your awesome store" />
         </div>
-        <div class="form-group" id="store-location-group" style="display:none">
-          <label class="form-label">Store location (optional)</label>
-          <input type="text" id="store-location" placeholder="Address, area, or Google Maps link" />
-          <button type="button" class="btn btn-outline btn-sm" id="pick-map-btn" onclick="openLocationPicker()" style="margin-top:8px">
-            Elegir en mapa
-          </button>
-          <p class="form-hint">Buyers can use this location to open your store on a map.</p>
-        </div>
         <div class="form-group" id="lightning-group" style="display:none">
           <label class="form-label">Lightning Address o URL de wallet LNbits</label>
           <input type="text" id="lightning-address" placeholder="seller@dominio.com  o  http://IP:5000/wallet/ID" />
@@ -103,35 +95,13 @@
     </div>
   </div>
 </div>
-
-<div id="map-picker-modal" class="map-picker-modal" aria-hidden="true">
-  <div class="map-picker-dialog card">
-    <div class="map-picker-header">
-      <h3>Select store location</h3>
-      <button type="button" class="map-picker-close" onclick="closeLocationPicker()">×</button>
-    </div>
-    <p class="text-muted text-sm" style="margin:0 0 12px 0">Haz clic en el mapa para seleccionar tu ubicación.</p>
-    <div id="store-map" class="store-map"></div>
-    <p id="map-picked-label" class="text-muted text-sm" style="margin:10px 0 0 0">No has seleccionado una ubicación todavía.</p>
-    <div class="map-picker-actions">
-      <button type="button" class="btn btn-ghost" onclick="closeLocationPicker()">Cancelar</button>
-      <button type="button" class="btn btn-primary" id="map-confirm-btn" onclick="confirmLocationPicker()" disabled>Usar ubicación</button>
-    </div>
-  </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // Pre-select role from URL param
 const urlRole = new URLSearchParams(location.search).get('role');
 if (urlRole) setRole(urlRole, document.querySelector(`[data-role="${urlRole}"]`));
-
-let mapPicker;
-let mapMarker;
-let selectedLatLng;
 
 const DEPARTMENT_MUNICIPALITIES = {
   'Ahuachapan': ['Ahuachapan Norte', 'Ahuachapan Centro', 'Ahuachapan Sur'],
@@ -218,76 +188,6 @@ function initAdministrativeSelectors() {
 
 initAdministrativeSelectors();
 
-function parseLatLngFromValue(value) {
-  const raw = (value || '').trim();
-  if (!raw) return null;
-
-  const coordMatch = raw.match(/(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
-  if (coordMatch) {
-    return { lat: Number(coordMatch[1]), lng: Number(coordMatch[2]) };
-  }
-  return null;
-}
-
-function openLocationPicker() {
-  const modal = document.getElementById('map-picker-modal');
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden', 'false');
-
-  const initial = parseLatLngFromValue(document.getElementById('store-location').value) || { lat: 13.7942, lng: -88.8965 };
-
-  if (!mapPicker) {
-    mapPicker = L.map('store-map').setView([initial.lat, initial.lng], 8);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors',
-    }).addTo(mapPicker);
-
-    mapPicker.on('click', (e) => {
-      selectedLatLng = e.latlng;
-      if (!mapMarker) {
-        mapMarker = L.marker(selectedLatLng).addTo(mapPicker);
-      } else {
-        mapMarker.setLatLng(selectedLatLng);
-      }
-      document.getElementById('map-picked-label').textContent = `Seleccionado: ${selectedLatLng.lat.toFixed(6)}, ${selectedLatLng.lng.toFixed(6)}`;
-      document.getElementById('map-confirm-btn').disabled = false;
-    });
-  }
-
-  mapPicker.setView([initial.lat, initial.lng], 13);
-  selectedLatLng = initial;
-  if (!mapMarker) {
-    mapMarker = L.marker([initial.lat, initial.lng]).addTo(mapPicker);
-  } else {
-    mapMarker.setLatLng([initial.lat, initial.lng]);
-  }
-  document.getElementById('map-picked-label').textContent = `Seleccionado: ${initial.lat.toFixed(6)}, ${initial.lng.toFixed(6)}`;
-  document.getElementById('map-confirm-btn').disabled = false;
-
-  setTimeout(() => mapPicker.invalidateSize(), 100);
-}
-
-function closeLocationPicker() {
-  const modal = document.getElementById('map-picker-modal');
-  modal.classList.remove('open');
-  modal.setAttribute('aria-hidden', 'true');
-}
-
-function confirmLocationPicker() {
-  if (!selectedLatLng) return;
-  const lat = selectedLatLng.lat.toFixed(6);
-  const lng = selectedLatLng.lng.toFixed(6);
-  document.getElementById('store-location').value = `${lat},${lng}`;
-  closeLocationPicker();
-}
-
-document.getElementById('map-picker-modal').addEventListener('click', (e) => {
-  if (e.target.id === 'map-picker-modal') {
-    closeLocationPicker();
-  }
-});
-
 function formatPhoneInput(value) {
   const raw = (value || '').trim();
   const digits = raw.replace(/\D/g, '');
@@ -352,7 +252,6 @@ function setRole(role, btn) {
   if (btn) btn.classList.add('active');
   const isSeller = role === 'seller';
   document.getElementById('store-group').style.display       = isSeller ? 'block' : 'none';
-  document.getElementById('store-location-group').style.display = isSeller ? 'block' : 'none';
   document.getElementById('lightning-group').style.display   = isSeller ? 'block' : 'none';
   document.getElementById('invoice-key-group').style.display = isSeller ? 'block' : 'none';
 }
@@ -401,8 +300,6 @@ document.getElementById('register-form').addEventListener('submit', async e => {
     };
     const sn = document.getElementById('store-name').value;
     if (sn) payload.store_name = sanitizeTextInput(sn, { maxLength: 100, allowEmpty: true });
-    const storeLocation = sanitizeTextInput(document.getElementById('store-location').value, { maxLength: 255, allowEmpty: true });
-    if (storeLocation) payload.store_location = storeLocation;
     const lightningAddress = sanitizeTextInput(document.getElementById('lightning-address').value, { maxLength: 255, allowEmpty: true });
     if (lightningAddress) payload.lightning_address = lightningAddress;
     const invoiceKey = sanitizeTextInput(document.getElementById('lnbits-invoice-key').value, { maxLength: 255, allowEmpty: true });
@@ -435,63 +332,6 @@ document.getElementById('register-form').addEventListener('submit', async e => {
 .role-tab.active {
   background: rgba(247,147,26,0.12); border-color: rgba(247,147,26,0.4);
   color: var(--orange); font-weight: 600;
-}
-
-.map-picker-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(5, 8, 18, 0.7);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: 1200;
-}
-
-.map-picker-modal.open {
-  display: flex;
-}
-
-.map-picker-dialog {
-  width: min(760px, 100%);
-  padding: 18px;
-  border: 1px solid var(--border);
-}
-
-.map-picker-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.map-picker-header h3 {
-  margin: 0;
-  font-size: 1.05rem;
-}
-
-.map-picker-close {
-  border: 0;
-  background: transparent;
-  color: var(--text-2);
-  font-size: 1.4rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.store-map {
-  width: 100%;
-  height: 320px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-
-.map-picker-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 12px;
 }
 </style>
 {% endblock %}

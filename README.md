@@ -188,19 +188,19 @@ Usuarios demo generados por seed:
 
 Para facilitar que otra persona ejecute el sistema sin pasos extra, este repo puede incluir:
 
-- Base de datos SQLite con datos demo: `app/data/bitmarket.db`
 - Imagenes de productos: `app/app/static/uploads/products/`
 
 Notas:
 
 - `.env` sigue excluido por seguridad.
 - Usa `.env.example` como plantilla para entorno local.
+- La base de datos se conecta por `DATABASE_URL` (PostgreSQL por defecto en este proyecto).
 
 Pasos sugeridos para publicar en GitHub:
 
 ```bash
 git add .
-git commit -m "chore: include demo db and product images for easier local setup"
+git commit -m "chore: include updated docs and product images for easier local setup"
 git push origin <tu-rama>
 ```
 

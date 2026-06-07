@@ -41,14 +41,8 @@ async function loadProduct() {
           <p class="product-card__cat">${p.category}</p>
           <h1 class="product-detail__title">${p.title}</h1>
           <p class="text-muted text-sm">Sold by <strong style="color:var(--text-1)">${p.seller_name || 'Unknown'}</strong></p>
-          ${p.seller_store_location
-            ? `<div class="store-location-box">
-                <p class="text-muted text-sm" style="margin:0 0 8px 0">Store location: <strong style="color:var(--text-1)">${p.seller_store_location}</strong></p>
-                ${canBuy
-                  ? `<button class="btn btn-outline btn-sm" onclick="openSellerMap()">Ver tienda en mapa</button>`
-                  : '<p class="text-muted text-sm" style="margin:0">Inicia sesion como comprador para abrir el mapa.</p>'
-                }
-              </div>`
+          ${p.seller_store_name
+            ? `<p class="text-muted text-sm">Store: <strong style="color:var(--text-1)">${p.seller_store_name}</strong></p>`
             : ''}
 
           <div class="price-box">
@@ -106,23 +100,6 @@ function setMainImage(url, thumbEl) {
 
   document.querySelectorAll('.product-thumb').forEach(el => el.classList.remove('active'));
   if (thumbEl) thumbEl.classList.add('active');
-}
-
-function resolveMapUrl(locationText) {
-  const value = (locationText || '').trim();
-  if (!value) return null;
-  if (/^https?:\/\//i.test(value)) return value;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(value)}`;
-}
-
-function openSellerMap() {
-  const locationText = window._product?.seller_store_location;
-  const mapUrl = resolveMapUrl(locationText);
-  if (!mapUrl) {
-    showToast('Este vendedor no tiene ubicacion registrada.', 'info');
-    return;
-  }
-  window.open(mapUrl, '_blank', 'noopener');
 }
 
 function changeQty(dir) {
@@ -237,13 +214,6 @@ document.addEventListener('DOMContentLoaded', loadProduct);
 .stock-indicator.ok  { background: rgba(34,197,94,0.08);  color: var(--success); }
 .stock-indicator.low { background: rgba(245,158,11,0.08); color: var(--warning); }
 .stock-indicator.out { background: rgba(239,68,68,0.08);  color: var(--error); }
-.store-location-box {
-  margin: 12px 0 18px;
-  padding: 12px;
-  border: 1px dashed var(--border-md);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-}
 .qty-control {
   display: flex; align-items: center;
   border: 1px solid var(--border-md); border-radius: var(--radius-md); overflow: hidden;

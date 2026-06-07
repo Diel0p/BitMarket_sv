@@ -1,6 +1,6 @@
 ﻿"""
 User Service â€” auth, profile, moderation.
-Uses in-memory DB helpers (swap to Motor by changing db_* calls).
+Uses document DB helpers via app.app.config.database.
 """
 
 import re
@@ -9,7 +9,7 @@ from datetime import timedelta
 from fastapi import HTTPException, status
 
 from app.app.config.database import (
-    db_insert, db_find_one, db_find_all, db_update, db_count,
+    db_insert, db_find_one, db_update,
 )
 from app.app.middleware.auth import hash_password, verify_password, create_access_token
 from app.app.models.user import UserRegisterRequest, UserLoginRequest
@@ -80,8 +80,6 @@ async def register_user(data: UserRegisterRequest, db) -> dict:
     if data.role.value == "seller":
         # Seller accounts must always have payout info to prevent unpayable orders later.
         doc["store_name"] = data.store_name or f"{data.name}'s Store"
-        if data.store_location:
-            doc["store_location"] = data.store_location.strip()
         if not lightning_address:
             raise HTTPException(status_code=400, detail="Seller accounts require a Lightning Address")
         doc["lightning_address"] = lightning_address
@@ -157,6 +155,8 @@ async def update_user_profile(user_id: str, updates: dict, db) -> dict:
         raise HTTPException(status_code=404, detail="User not found")
 
     normalized_updates = dict(updates)
+    # Store location is deprecated and should not be persisted anymore.
+    normalized_updates.pop("store_location", None)
     if "phone" in normalized_updates:
         try:
             normalized_updates["phone"] = normalize_phone(normalized_updates.get("phone"))
@@ -177,12 +177,9 @@ async def update_user_profile(user_id: str, updates: dict, db) -> dict:
         # Keep seller payout destination mandatory after profile edits as well.
         if "lightning_address" in normalized_updates and not normalized_updates["lightning_address"]:
             raise HTTPException(status_code=400, detail="Seller accounts require a Lightning Address")
-        if "store_location" in normalized_updates and normalized_updates["store_location"]:
-            normalized_updates["store_location"] = normalized_updates["store_location"].strip()
     else:
         # Prevent buyers/admins from mutating seller-only profile fields.
         normalized_updates.pop("store_name", None)
-        normalized_updates.pop("store_location", None)
 
     updated = db_update("users", user_id, normalized_updates)
     if not updated:

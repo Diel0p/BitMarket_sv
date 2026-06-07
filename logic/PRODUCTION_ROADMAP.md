@@ -13,7 +13,7 @@ BitMarket SV es un MVP de demostración. Funciona correctamente para:
 
 | # | Limitación | Impacto | Solución |
 |---|-----------|---------|---------|
-| 1 | SQLite (escritura única) | Se rompe con múltiples workers/procesos | Migrar `database.py` a PostgreSQL o MongoDB |
+| 1 | Modelo documental sin transacciones de negocio completas | Riesgo de inconsistencias en flujos concurrentes | Fortalecer transacciones y bloqueos en PostgreSQL |
 | 2 | Pagos en mock mode | No procesa Bitcoin real | Configurar LNbits, Alby o Strike |
 | 3 | Sin atomicidad en stock | Dos compradores pueden comprar el mismo último producto | Usar transacciones DB o Redis lock |
 | 4 | Sin rate limiting | Vulnerable a abuso / DDoS básico | Agregar `slowapi` |
@@ -27,8 +27,8 @@ Reemplazar los 4 helpers en `app/app/config/database.py`:
 - `db_insert`, `db_find_one`, `db_find_all`, `db_update`
 
 Opciones:
-- **PostgreSQL** con SQLAlchemy async — robusto, gratuito, self-hosted
-- **MongoDB Atlas** con Motor async — más cercano al diseño original
+- **PostgreSQL** (actual) con mejores índices, constraints y transacciones
+- **MongoDB Atlas** con Motor async si se decide migrar de motor documental
 
 Servicios y controladores **no requieren cambios**.
 

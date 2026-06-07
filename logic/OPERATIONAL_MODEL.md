@@ -94,6 +94,6 @@ Buyer registers → browses catalog → adds to cart
 | Component | Minimum | Recommended |
 |-----------|---------|-------------|
 | API server | 1 vCPU, 512MB RAM | 2 vCPU, 2GB RAM |
-| Database | SQLite (current MVP) | MongoDB Atlas M10 |
+| Database | PostgreSQL (current MVP) | PostgreSQL gestionado dedicado |
 | LNbits | Self-hosted VPS | Dedicated node |
 | Storage | Local disk | S3-compatible |

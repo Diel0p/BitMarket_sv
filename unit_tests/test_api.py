@@ -4,16 +4,17 @@ BitMarket SV – Integration Tests
 Run from project root:
     pytest unit_tests/ -v
 
-All tests use in-memory storage.
-No MongoDB, no LNbits, no external services needed.
+Tests run against the configured document database backend
+(currently PostgreSQL in this project).
+No MongoDB or LNbits credentials are required.
 """
 
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
-# pytest.ini adds app/ to pythonpath, so these resolve cleanly
-from main import app
+# Import app from the actual package entrypoint.
+from app.main import app
 from app.app.config.database import db_clear_all
 
 
@@ -21,7 +22,7 @@ from app.app.config.database import db_clear_all
 
 @pytest_asyncio.fixture(autouse=True)
 async def reset_db():
-    """Wipe in-memory DB before every test for full isolation."""
+    """Wipe document collections before every test for isolation."""
     db_clear_all()
     yield
     db_clear_all()
@@ -107,6 +108,28 @@ async def test_login_success(client):
     assert r.status_code == 200
     assert "access_token" in r.json()
     assert r.json()["token_type"] == "bearer"
+
+
+@pytest.mark.asyncio
+async def test_login_email_normalization(client):
+    await client.post("/api/auth/register", json={
+        "name": "Case User", "email": "case@test.com",
+        "password": "Test1234!", "role": "buyer",
+    })
+    # Login should work even if the client sends mixed-case email with spaces.
+    r = await client.post("/api/auth/login", json={
+        "email": "  CASE@Test.com  ", "password": "Test1234!",
+    })
+    assert r.status_code == 200
+    assert "access_token" in r.json()
+
+
+@pytest.mark.asyncio
+async def test_login_invalid_email_payload(client):
+    r = await client.post("/api/auth/login", json={
+        "email": "invalid-email", "password": "Test1234!",
+    })
+    assert r.status_code == 422
 
 
 @pytest.mark.asyncio

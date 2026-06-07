@@ -15,7 +15,7 @@ HTTP Request
  [Services]        business logic, validation, orchestration
      │
      ▼
- [Database]        SQLite-backed document store (JSON docs in SQLite tables)
+ [Database]        PostgreSQL-backed document store (JSONB docs)
 ```
 
 ## Layer responsibilities
@@ -36,9 +36,9 @@ Pydantic v2 schemas for request validation and response serialization.
 Auto-documented via FastAPI's OpenAPI integration.
 
 **Database** (`src/app/config/database.py`)
-Currently SQLite-backed (`app/data/bitmarket.db`). Documents are stored as JSON inside SQLite tables. All DB access goes through four helpers:
+Currently PostgreSQL-backed via `DATABASE_URL`. Documents are stored as JSONB inside collection-like tables. All DB access goes through four helpers:
 `db_insert`, `db_find_one`, `db_find_all`, `db_update`.
-Swapping to MongoDB only requires replacing these four functions.
+Swapping providers primarily requires replacing these helpers.
 
 ## Payment layer
 
@@ -64,22 +64,22 @@ get_seller = require_roles(UserRole.SELLER)
 get_admin  = require_roles(UserRole.ADMIN)
 ```
 
-## Why SQLite instead of MongoDB
+## Why PostgreSQL document store
 
-MongoDB was replaced with a SQLite-backed document store for this MVP:
-- Zero external dependencies — no install, no config, no connection errors
-- NoSQL-style API (`db_insert`, `db_find_one`, etc.) — trivial to swap to Motor
-- Data persists across restarts (stored in `app/data/bitmarket.db`)
-- Sufficient for demo and evaluation
+The current MVP uses a PostgreSQL-backed document store:
+- JSONB offers document-style flexibility with relational reliability
+- Works well for local development and production deployment paths
+- Keeps a simple NoSQL-style API (`db_insert`, `db_find_one`, etc.)
+- Avoids introducing a second database engine for this stage
 
-To restore MongoDB: replace the four `db_*` helpers in `database.py`
-with Motor calls. Services and controllers stay unchanged.
+To migrate providers later, replace the `db_*` helpers in `database.py`.
+Services and controllers stay unchanged.
 
 ## Scalability path
 
 | Step | Action |
 |------|--------|
-| 1 | Replace SQLite DB with MongoDB Motor — only `database.py` changes |
+| 1 | Keep PostgreSQL and evolve schema/index strategy as traffic grows |
 | 2 | Add Redis for rate limiting and session caching |
 | 3 | Replace LNbits with per-seller split-payment provider |
 | 4 | Extract payment service into standalone microservice |
