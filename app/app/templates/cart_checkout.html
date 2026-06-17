@@ -47,11 +47,13 @@ function showEmpty() {
       <a href="/products" class="btn btn-primary" style="margin-top:16px" data-i18n="checkout.viewProducts">View products</a>
     </div>
   `;
+  applyTranslations();
 }
 
 function showError(msg) {
   document.getElementById('checkout-content').innerHTML =
     `<p class="text-muted" style="text-align:center">${msg}</p>`;
+  applyTranslations();
 }
 
 // ── Step 2: Shipping form ──────────────────────────────────
@@ -111,6 +113,7 @@ function renderCheckoutForm() {
   `;
 
   document.getElementById('shipping-form').addEventListener('submit', submitCheckout);
+  applyTranslations();
 }
 
 // ── Step 3: Submit checkout ────────────────────────────────
@@ -251,6 +254,7 @@ function renderInvoice(result) {
     }, 200);
   }
 
+  applyTranslations();
   startPolling(result.payment_hash, isMock);
 }
 
@@ -302,6 +306,7 @@ function showExpiredMessage() {
         </div>
       </div>
     `;
+    applyTranslations();
   }
 }
 

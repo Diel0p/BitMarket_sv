@@ -337,6 +337,8 @@ const I18N = {
     'common.no': 'No',
   },
 
+};
+
 function getLang() {
   const saved = localStorage.getItem('bm_lang');
   return saved === 'es' || saved === 'en' ? saved : 'en';
@@ -825,6 +827,11 @@ function productCard(p) {
 
 // ── Run on every page ─────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // Sync lang selector with saved preference BEFORE applying translations
+  const savedLang = getLang();
+  const switcher = document.getElementById('lang-switcher');
+  if (switcher) switcher.value = savedLang;
+
   applyTranslations();
   hydrateNavbar();
   refreshCartCount();
