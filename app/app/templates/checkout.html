@@ -3,8 +3,8 @@
 
 {% block content %}
 <div class="page-narrow">
-  <h1 class="section-title" style="text-align:center;margin-bottom:8px">⚡ Paga con Lightning</h1>
-  <p class="text-muted text-sm" style="text-align:center;margin-bottom:28px">Escanea la invoice o espera la confirmacion en modo mock</p>
+  <h1 class="section-title" style="text-align:center;margin-bottom:8px">⚡ Pay with Lightning</h1>
+  <p class="text-muted text-sm" style="text-align:center;margin-bottom:28px">Scan the invoice or wait for confirmation in mock mode</p>
 
   <div id="checkout-content">
     <div style="text-align:center"><div class="spinner"></div></div>
@@ -32,7 +32,7 @@ function renderQr(invoiceString) {
   if (!invoiceString) {
     wrap.innerHTML = `
       <div style="font-size:0.55rem;font-family:var(--mono);color:#000;word-break:break-all;text-align:center;line-height:1.3">
-        Invoice no disponible
+        Invoice not available
       </div>
     `;
     return;
@@ -59,7 +59,7 @@ function renderInvoice() {
     ${isMock ? `<div class="mock-banner">🟡 <strong>Modo mock</strong> — el pago se confirma automaticamente en ~${MOCK_CONFIRM} segundos. No necesitas Bitcoin real.</div>` : ''}
 
     <div class="invoice-box fade-in" id="invoice-box">
-      <p class="text-muted text-sm" style="margin-bottom:12px">Total a pagar</p>
+      <p class="text-muted text-sm" style="margin-bottom:12px">Amount due</p>
       <div class="invoice-amount">⚡ ${amountSats.toLocaleString()} <span style="font-size:1rem;color:var(--text-2)">sats</span></div>
       <p class="text-muted text-sm mono" style="margin-top:4px">≈ ${sats2btc(amountSats)} BTC</p>
 
@@ -86,11 +86,11 @@ function renderInvoice() {
     <div id="success-box" style="display:none" class="fade-in">
       <div style="text-align:center;padding:40px;background:var(--bg-card);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius-xl);margin-top:16px">
         <div style="font-size:4rem;margin-bottom:12px">⚡</div>
-        <h2 style="font-size:1.8rem;font-weight:700;color:var(--success);letter-spacing:-0.02em">Pago confirmado</h2>
-        <p class="text-muted" style="margin-top:8px">Tu pedido fue registrado correctamente.</p>
+        <h2 style="font-size:1.8rem;font-weight:700;color:var(--success);letter-spacing:-0.02em">Payment confirmed</h2>
+        <p class="text-muted" style="margin-top:8px">Your order was recorded successfully.</p>
         <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-          <a href="/orders" class="btn btn-primary">Ver mis pedidos</a>
-          <a href="/products" class="btn btn-outline">Seguir comprando</a>
+          <a href="/orders" class="btn btn-primary">View my orders</a>
+          <a href="/products" class="btn btn-outline">Continue shopping</a>
         </div>
       </div>
     </div>
@@ -153,14 +153,14 @@ function showExpiredMessage() {
   box.innerHTML = `
     <div class="fade-in" style="text-align:center;padding:40px;background:var(--bg-card);border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius-xl);margin-top:16px">
       <div style="font-size:3.5rem;margin-bottom:12px">⏱️</div>
-      <h2 style="font-size:1.6rem;font-weight:700;color:#ef4444;margin-bottom:8px">Invoice Expirado</h2>
+      <h2 style="font-size:1.6rem;font-weight:700;color:#ef4444;margin-bottom:8px">Invoice expired</h2>
       <p class="text-muted" style="margin-bottom:24px;line-height:1.6">
-        El tiempo para pagar este invoice ha expirado (5 minutos).<br>
-        Tu carrito ha sido restaurado. Por favor, intenta de nuevo.
+        The time to pay this invoice has expired (5 minutes).<br>
+        Your cart has been restored. Please try again.
       </p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-        <a href="/cart" class="btn btn-primary">🛒 Volver al carrito</a>
-        <a href="/products" class="btn btn-outline">🏠 Ir al catálogo</a>
+        <a href="/cart" class="btn btn-primary">🛒 Back to cart</a>
+        <a href="/products" class="btn btn-outline">🏠 Go to catalog</a>
       </div>
     </div>
   `;
@@ -175,7 +175,7 @@ function copyInvoice() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (!hash) { document.getElementById('checkout-content').innerHTML = '<p class="text-muted">Enlace de checkout invalido.</p>'; return; }
+  if (!hash) { document.getElementById('checkout-content').innerHTML = '<p class="text-muted">Invalid checkout link.</p>'; return; }
   if (!auth.isLoggedIn()) { window.location.href = '/login'; return; }
   renderInvoice();
 });

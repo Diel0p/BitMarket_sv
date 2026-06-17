@@ -7,7 +7,7 @@
     <div class="card-body">
       <div class="auth-logo">⚡</div>
       <h1 class="auth-title">Welcome back</h1>
-      <p class="text-muted text-sm" style="margin-bottom:24px">Login to your BitMarket SV account</p>
+      <p class="text-muted text-sm" style="margin-bottom:24px">Sign in to your BitMarket SV account</p>
 
       <div id="msg"></div>
 
@@ -26,7 +26,7 @@
       </form>
 
       <p class="text-muted text-sm" style="text-align:center;margin-top:20px">
-        No account? <a href="/register" class="text-orange">Sign up</a>
+        No account? <a href="/register" class="text-orange">Create one</a>
       </p>
 
       <!-- Demo hint -->
@@ -56,10 +56,10 @@ document.getElementById('login-form').addEventListener('submit', async e => {
     const password = String(document.getElementById('password').value || '').trim();
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      throw new Error('Correo electronico invalido.');
+      throw new Error('Invalid email address.');
     }
     if (password.length < 8 || password.length > 128) {
-      throw new Error('Contrasena invalida.');
+      throw new Error('Invalid password.');
     }
 
     const data = await apiFetch('/auth/login', {

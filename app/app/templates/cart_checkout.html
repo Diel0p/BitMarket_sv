@@ -17,6 +17,9 @@
 let cartData = null;
 let pollInterval = null;
 let elapsed = 0;
+let lastCheckoutPayload = null;
+let lastInvoiceResult = null;
+let activePaymentHash = null;
 const INVOICE_TTL = 300;  // 5 minutos
 const MOCK_CONFIRM = 10;
 
@@ -113,7 +116,8 @@ function renderCheckoutForm() {
 // ── Step 3: Submit checkout ────────────────────────────────
 async function submitCheckout(e) {
   e.preventDefault();
-  const btn = e.target.querySelector('[type=submit]');
+  const form = e.target;
+  const btn = form.querySelector('[type=submit]');
   btn.disabled = true;
   btn.textContent = 'Generando invoice…';
 
@@ -130,21 +134,14 @@ async function submitCheckout(e) {
   };
 
   try {
-    const payload = {
-      shipping_address: {
-        name: sanitizeText(document.getElementById('f-name').value, { field: 'Nombre', required: true, minLength: 2, maxLength: 100 }),
-        street: sanitizeText(document.getElementById('f-street').value, { field: 'Direccion', required: true, minLength: 5, maxLength: 255 }),
-        city: sanitizeText(document.getElementById('f-city').value, { field: 'Ciudad', required: true, minLength: 2, maxLength: 120 }),
-        country: sanitizeText(document.getElementById('f-country').value, { field: 'Pais', required: true, minLength: 2, maxLength: 80 }),
-        zip: sanitizeText(document.getElementById('f-zip').value, { field: 'Codigo postal', maxLength: 20 }),
-      },
-      notes: sanitizeText(document.getElementById('f-notes').value, { field: 'Notas', maxLength: 600 }),
-    };
+    const payload = buildCheckoutPayload(sanitizeText);
+    lastCheckoutPayload = payload;
 
     const result = await apiFetch('/cart/checkout', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+    lastInvoiceResult = result;
     renderInvoice(result);
   } catch(err) {
     btn.disabled = false;
@@ -153,10 +150,24 @@ async function submitCheckout(e) {
   }
 }
 
+function buildCheckoutPayload(sanitizeText) {
+  return {
+    shipping_address: {
+      name: sanitizeText(document.getElementById('f-name').value, { field: 'Nombre', required: true, minLength: 2, maxLength: 100 }),
+      street: sanitizeText(document.getElementById('f-street').value, { field: 'Direccion', required: true, minLength: 5, maxLength: 255 }),
+      city: sanitizeText(document.getElementById('f-city').value, { field: 'Ciudad', required: true, minLength: 2, maxLength: 120 }),
+      country: sanitizeText(document.getElementById('f-country').value, { field: 'Pais', required: true, minLength: 2, maxLength: 80 }),
+      zip: sanitizeText(document.getElementById('f-zip').value, { field: 'Codigo postal', maxLength: 20 }),
+    },
+    notes: sanitizeText(document.getElementById('f-notes').value, { field: 'Notas', maxLength: 600 }),
+  };
+}
+
 // ── Step 4: Show invoice + poll ────────────────────────────
 function renderInvoice(result) {
   const isMock = result.is_mock;
   const amountSats = result.amount_sats;
+  activePaymentHash = result.payment_hash || null;
 
   document.getElementById('checkout-content').innerHTML = `
     ${isMock ? `<div class="mock-banner">🟡 <strong>Mock mode</strong> — el pago se confirma automáticamente en ~${MOCK_CONFIRM} segundos.</div>` : ''}
@@ -171,7 +182,10 @@ function renderInvoice(result) {
       </div>
 
       <div class="invoice-string" id="invoice-str">Cargando…</div>
-      <button class="btn btn-ghost btn-sm" onclick="copyInvoice()" style="margin-bottom:20px">📋 Copiar invoice</button>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px">
+        <button class="btn btn-ghost btn-sm" onclick="copyInvoice()">📋 Copiar invoice</button>
+        <button class="btn btn-outline btn-sm" onclick="cancelInvoice()">❌ Cancelar invoice</button>
+      </div>
 
       <hr />
 
@@ -267,8 +281,11 @@ async function pollStatus(paymentHash, isMock) {
 }
 
 function showExpiredMessage() {
-  document.getElementById('invoice-box').style.display = 'none';
-  document.getElementById('status-bar').style.display = 'none';
+  const invoiceBox = document.getElementById('invoice-box');
+  const statusBar = document.getElementById('status-bar');
+  if (invoiceBox) invoiceBox.style.display = 'none';
+  if (statusBar) statusBar.style.display = 'none';
+  activePaymentHash = null;
   const checkout = document.getElementById('checkout-content');
   if (checkout) {
     checkout.innerHTML = `
@@ -277,15 +294,60 @@ function showExpiredMessage() {
         <h2 style="font-size:1.6rem;font-weight:700;color:#ef4444;margin-bottom:8px">Invoice Expirado</h2>
         <p class="text-muted" style="margin-bottom:24px;line-height:1.6">
           El tiempo para pagar este invoice ha expirado (5 minutos).<br>
-          Tu carrito ha sido restaurado. Por favor, intenta de nuevo.
+          Tu carrito se mantiene intacto para que puedas generar un nuevo invoice.
         </p>
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-          <button onclick="window.location.reload()" class="btn btn-primary">🔄 Reintentar</button>
+          <button onclick="retryCheckout()" class="btn btn-primary">🔄 Reintentar</button>
           <a href="/cart" class="btn btn-outline">🛒 Volver al carrito</a>
           <a href="/products" class="btn btn-ghost">🏠 Seguir comprando</a>
         </div>
       </div>
     `;
+  }
+}
+
+async function cancelInvoice() {
+  if (!activePaymentHash) {
+    showToast('No hay invoice activa para cancelar', 'error');
+    return;
+  }
+
+  const confirmed = await confirmAction('Se cancelara esta invoice y tus productos seguiran en el carrito. Deseas continuar?', {
+    title: 'Cancelar invoice',
+    confirmText: 'Si, cancelar',
+    cancelText: 'No',
+  });
+  if (!confirmed) return;
+
+  try {
+    await apiFetch(`/cart/cancel-invoice/${activePaymentHash}`, { method: 'POST' });
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+    activePaymentHash = null;
+    showToast('Invoice cancelada. Tu carrito sigue intacto.', 'success');
+    window.location.href = '/cart';
+  } catch (err) {
+    showToast(err.message || 'No se pudo cancelar la invoice', 'error');
+  }
+}
+
+async function retryCheckout() {
+  if (!lastCheckoutPayload) {
+    window.location.reload();
+    return;
+  }
+
+  try {
+    const result = await apiFetch('/cart/checkout', {
+      method: 'POST',
+      body: JSON.stringify(lastCheckoutPayload),
+    });
+    lastInvoiceResult = result;
+    renderInvoice(result);
+  } catch (err) {
+    showToast(err.message || 'No se pudo generar un nuevo invoice', 'error');
   }
 }
 

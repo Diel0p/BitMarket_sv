@@ -7,6 +7,7 @@ All actual data is fetched client-side via the /api/* endpoints.
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 import os
 
@@ -62,7 +63,8 @@ async def product_detail(request: Request, product_id: str):
 
 @router.get("/checkout/{order_id}", response_class=HTMLResponse)
 async def checkout(request: Request, order_id: str):
-    return _r(request, "checkout.html")
+    # Legacy direct-checkout links are redirected to the cart-based checkout flow.
+    return RedirectResponse(url="/cart/checkout", status_code=307)
 
 
 @router.get("/cart", response_class=HTMLResponse)

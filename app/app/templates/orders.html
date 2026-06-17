@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="container page">
-  <h1 class="section-title">My orders</h1>
+  <h1 class="section-title">My Orders</h1>
   <div id="orders-list">
     <div style="text-align:center;padding:40px"><div class="spinner"></div></div>
   </div>
@@ -22,10 +22,10 @@ async function loadOrders() {
     if (!data.orders.length) {
       el.innerHTML = ui.emptyState({
         icon: '📦',
-        title: 'Aun no tienes pedidos',
-        description: 'Explora productos y realiza tu primera compra.',
+        title: 'You do not have any orders yet',
+        description: 'Browse products and make your first purchase.',
         actionHref: '/products',
-        actionText: 'Ir al catalogo',
+        actionText: 'Go to catalog',
       });
       return;
     }
@@ -59,8 +59,8 @@ async function loadOrders() {
   } catch(e) {
     el.innerHTML = ui.emptyState({
       icon: '⚠️',
-      title: 'No se pudieron cargar tus pedidos',
-      description: e.message || 'Intenta nuevamente en unos segundos.',
+      title: 'Could not load your orders',
+      description: e.message || 'Try again in a few seconds.',
     });
   }
 }

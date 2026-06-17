@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Admin — Productos{% endblock %}
+{% block title %}Admin — Products{% endblock %}
 
 {% block content %}
 <div class="dash-layout">
@@ -14,12 +14,12 @@
   </aside>
   <main class="dash-main">
     <div class="section-header">
-      <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">Productos</h1>
+      <h1 style="font-size:1.5rem;font-weight:700;letter-spacing:-0.02em">Products</h1>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" onclick="filterStatus('',this)">Todos</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterStatus('active',this)">Activos</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterStatus('inactive',this)">Inactivos</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterStatus('pending',this)">Pendientes</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterStatus('',this)">All</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterStatus('active',this)">Active</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterStatus('inactive',this)">Inactive</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterStatus('pending',this)">Pending</button>
       </div>
     </div>
     <div id="products-wrap">
@@ -51,13 +51,13 @@ async function loadProducts() {
     const qs = currentStatus ? `?status=${currentStatus}` : '';
     const data = await apiFetch('/admin/products' + qs);
     if (!data.products.length) {
-      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📦</div><p>No se encontraron productos.</p></div>';
+      wrap.innerHTML = '<div class="empty-state"><div class="empty-state__icon">📦</div><p>No products found.</p></div>';
       return;
     }
     wrap.innerHTML = `
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Producto</th><th>Vendedor</th><th>Categoria</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Product</th><th>Seller</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>
             ${data.products.map(p => `
               <tr>
@@ -71,9 +71,9 @@ async function loadProducts() {
                 <td>${statusPill(p.status)}</td>
                 <td>
                   <div style="display:flex;gap:4px;flex-wrap:wrap">
-                    <a href="/products/${p.id}" class="btn btn-ghost btn-sm">Ver</a>
-                    ${p.status !== 'active'   ? `<button class="btn btn-sm btn-outline" onclick="setStatus('${p.id}','active')">Aprobar</button>` : ''}
-                    ${p.status !== 'inactive' ? `<button class="btn btn-danger btn-sm" onclick="setStatus('${p.id}','inactive')">Desactivar</button>` : ''}
+                    <a href="/products/${p.id}" class="btn btn-ghost btn-sm">View</a>
+                    ${p.status !== 'active'   ? `<button class="btn btn-sm btn-outline" onclick="setStatus('${p.id}','active')">Approve</button>` : ''}
+                    ${p.status !== 'inactive' ? `<button class="btn btn-danger btn-sm" onclick="setStatus('${p.id}','inactive')">Deactivate</button>` : ''}
                   </div>
                 </td>
               </tr>
@@ -94,9 +94,9 @@ async function setStatus(id, status) {
       method: 'PATCH',
       body: JSON.stringify({ status })
     });
-    showToast('Estado del producto actualizado', 'success');
+    showToast('Product status updated', 'success');
     loadProducts();
-  } catch(e) { showToast(e.message || 'No se pudo actualizar el producto', 'error'); }
+  } catch(e) { showToast(e.message || 'Could not update the product', 'error'); }
 }
 
 document.addEventListener('DOMContentLoaded', loadProducts);

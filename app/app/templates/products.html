@@ -60,7 +60,7 @@ async function loadProducts() {
   const grid = document.getElementById('products-grid');
   grid.innerHTML = ui.productGridSkeleton(10);
 
-  // Obtener tasa BTC/USD para mostrar precios en dólares
+  // Get BTC/USD rate to show prices in USD
   await fetchBtcUsdRate();
 
   const qs = new URLSearchParams();
@@ -80,8 +80,8 @@ async function loadProducts() {
     if (!data.products.length) {
       grid.innerHTML = ui.emptyState({
         icon: '🔎',
-        title: 'No encontramos productos',
-        description: 'Prueba otro filtro o cambia el termino de busqueda.',
+        title: 'No products found',
+        description: 'Try another filter or change the search term.',
       });
     } else {
       grid.innerHTML = data.products.map(productCard).join('');
@@ -100,8 +100,8 @@ async function loadProducts() {
   } catch(e) {
     grid.innerHTML = ui.emptyState({
       icon: '⚠️',
-      title: 'No se pudo cargar el catalogo',
-      description: 'Revisa tu conexion e intenta de nuevo.',
+      title: 'Could not load the catalog',
+      description: 'Check your connection and try again.',
     });
   }
 }
