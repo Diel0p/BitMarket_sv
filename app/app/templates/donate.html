@@ -1,26 +1,26 @@
 {% extends "base.html" %}
-{% block title %}Apoyar el Proyecto{% endblock %}
+{% block title %}Support the Project{% endblock %}
 
 {% block content %}
 <div class="container page" style="max-width:800px">
   <div style="text-align:center;margin-bottom:40px">
     <div style="font-size:3rem;margin-bottom:16px">⚡💛</div>
-    <h1 style="font-size:2.2rem;font-weight:700;margin-bottom:12px">Apoya BitMarket SV</h1>
+    <h1 style="font-size:2.2rem;font-weight:700;margin-bottom:12px" data-i18n="donate.hero_title">Support BitMarket SV</h1>
     <p style="font-size:1.1rem;color:var(--text-2);max-width:600px;margin:0 auto">
-      Este proyecto es desarrollado por estudiantes de Cubo+ en El Salvador. 
-      Tu apoyo nos ayuda a mantener y mejorar la plataforma.
+      <span data-i18n="donate.hero_text_1">This project is developed by Cubo+ students in El Salvador.</span>
+      <span data-i18n="donate.hero_text_2">Your support helps us maintain and improve the platform.</span>
     </p>
   </div>
 
-  <!-- Formulario de donación -->
+  <!-- Donation form -->
   <div id="donation-form" class="card" style="margin-bottom:24px">
     <div class="card-body" style="text-align:center">
-      <h2 style="font-size:1.3rem;margin-bottom:20px">Donar con Lightning Network</h2>
+      <h2 style="font-size:1.3rem;margin-bottom:20px" data-i18n="donate.form_title">Donate with Lightning Network</h2>
       
-      <!-- Input monto personalizado -->
+      <!-- Custom amount input -->
       <div style="margin-bottom:24px">
-        <label style="display:block;font-size:0.9rem;color:var(--text-2);margin-bottom:8px">
-          Ingresa el monto a donar (satoshis):
+        <label style="display:block;font-size:0.9rem;color:var(--text-2);margin-bottom:8px" data-i18n="donate.amount_label">
+          Enter donation amount (satoshis):
         </label>
         <input 
           type="number" 
@@ -33,9 +33,9 @@
         <p id="custom-usd" style="font-size:0.85rem;color:#16a34a;margin-top:8px;min-height:20px"></p>
       </div>
 
-      <!-- Montos sugeridos -->
+      <!-- Suggested amounts -->
       <div style="margin-bottom:24px">
-        <p style="font-size:0.9rem;color:var(--text-2);margin-bottom:12px">O elige un monto sugerido:</p>
+        <p style="font-size:0.9rem;color:var(--text-2);margin-bottom:12px" data-i18n="donate.amount_suggested">Or choose a suggested amount:</p>
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
           <button onclick="selectAmount(10000)" class="btn btn-outline amount-btn" data-amount="10000">⚡ 10k</button>
           <button onclick="selectAmount(25000)" class="btn btn-outline amount-btn" data-amount="25000">⚡ 25k</button>
@@ -44,26 +44,27 @@
         </div>
       </div>
 
-      <!-- Botón generar invoice -->
+      <!-- Generate invoice button -->
       <button 
         id="generate-btn" 
         onclick="generateInvoice()" 
         class="btn btn-primary"
         style="font-size:1.1rem;padding:14px 32px"
+        data-i18n="donate.generate"
       >
-        🚀 Generar Invoice
+        🚀 Generate Invoice
       </button>
     </div>
   </div>
 
-  <!-- Área de Invoice (oculta inicialmente) -->
+  <!-- Invoice area (hidden initially) -->
   <div id="invoice-area" class="card" style="margin-bottom:24px;display:none">
     <div class="card-body" style="text-align:center">
-      <h2 style="font-size:1.3rem;margin-bottom:20px">Escanea para pagar</h2>
+      <h2 style="font-size:1.3rem;margin-bottom:20px" data-i18n="donate.scanner_title">Scan to pay</h2>
       
-      <!-- Monto a pagar -->
+      <!-- Amount to pay -->
       <div style="margin-bottom:20px">
-        <p style="font-size:0.85rem;color:var(--text-3);margin:0">Monto a donar:</p>
+        <p style="font-size:0.85rem;color:var(--text-3);margin:0" data-i18n="donate.amount_to_pay">Amount to donate:</p>
         <p style="font-size:1.8rem;font-weight:700;color:var(--orange);margin:8px 0">
           ⚡ <span id="invoice-sats">0</span> sats
         </p>
@@ -82,7 +83,7 @@
           <span id="bolt11-text"></span>
         </div>
         <button onclick="copyInvoice()" class="btn btn-ghost btn-sm" style="margin-top:8px">
-          📋 Copiar Invoice
+          📋 <span data-i18n="donate.copy_invoice">Copy Invoice</span>
         </button>
       </div>
 
@@ -90,70 +91,70 @@
       <div id="payment-status" style="margin-top:24px;padding:16px;background:var(--bg-secondary);border-radius:8px">
         <div style="display:flex;align-items:center;justify-content:center;gap:12px">
           <div class="spinner"></div>
-          <p style="margin:0;color:var(--text-2)">Esperando pago...</p>
+          <p style="margin:0;color:var(--text-2)" data-i18n="donate.waiting">Waiting for payment...</p>
         </div>
         <p id="timer-text" style="font-size:0.85rem;color:var(--text-3);margin-top:8px"></p>
       </div>
 
-      <!-- Botón cancelar -->
+      <!-- Cancel button -->
       <button onclick="cancelInvoice()" class="btn btn-ghost" style="margin-top:16px">
-        ← Cambiar monto
+        ← <span data-i18n="donate.change_amount">Change amount</span>
       </button>
     </div>
   </div>
 
-  <!-- Mensaje de éxito (oculto inicialmente) -->
+  <!-- Success message (hidden initially) -->
   <div id="success-message" class="card" style="margin-bottom:24px;display:none;border:3px solid #16a34a">
     <div class="card-body" style="text-align:center;padding:48px 24px">
       <div style="font-size:4rem;margin-bottom:16px">🎉💚⚡</div>
-      <h2 style="font-size:2rem;font-weight:700;color:#16a34a;margin-bottom:12px">
-        ¡Donación Recibida!
+      <h2 style="font-size:2rem;font-weight:700;color:#16a34a;margin-bottom:12px" data-i18n="donate.success_title">
+        Donation Received!
       </h2>
-      <p style="font-size:1.2rem;color:var(--text-2);margin-bottom:24px">
-        Gracias por apoyar BitMarket SV
+      <p style="font-size:1.2rem;color:var(--text-2);margin-bottom:24px" data-i18n="donate.success_subtitle">
+        Thank you for supporting BitMarket SV
       </p>
       <div style="background:var(--bg-secondary);padding:20px;border-radius:12px;margin-bottom:24px">
-        <p style="font-size:0.85rem;color:var(--text-3);margin:0">Has donado:</p>
+        <p style="font-size:0.85rem;color:var(--text-3);margin:0" data-i18n="donate.you_donated">You donated:</p>
         <p style="font-size:1.8rem;font-weight:700;color:var(--orange);margin:8px 0">
           ⚡ <span id="success-sats">0</span> sats
         </p>
         <p id="success-usd" style="font-size:1rem;color:#16a34a;margin:0"></p>
       </div>
       <p style="color:var(--text-2);line-height:1.6">
-        Tu apoyo nos ayuda a mantener y mejorar esta plataforma.<br>
-        ¡Cada satoshi cuenta! 💛
+        <span data-i18n="donate.success_text_1">Your support helps us maintain and improve this platform.</span><br>
+        <span data-i18n="donate.success_text_2">Every satoshi counts!</span> 💛
       </p>
       <button onclick="newDonation()" class="btn btn-primary" style="margin-top:24px">
-        💝 Hacer otra donación
+        💝 <span data-i18n="donate.new_donation">Make another donation</span>
       </button>
     </div>
   </div>
 
-  <!-- Información adicional -->
+  <!-- Additional information -->
   <div class="card" style="margin-bottom:24px">
     <div class="card-body">
-      <h3 style="font-size:1.1rem;margin-bottom:16px">💡 ¿Para qué se usan las donaciones?</h3>
+      <h3 style="font-size:1.1rem;margin-bottom:16px">💡 <span data-i18n="donate.uses_title">What are donations used for?</span></h3>
       <ul style="color:var(--text-2);line-height:1.8">
-        <li>🖥️ Mantenimiento de servidores y base de datos</li>
-        <li>🔧 Mejoras y nuevas funcionalidades</li>
-        <li>🐛 Corrección de errores y optimización</li>
-        <li>📚 Documentación y tutoriales</li>
-        <li>☕ Café para los desarrolladores 😊</li>
+        <li>🖥️ <span data-i18n="donate.use_1">Server and database maintenance</span></li>
+        <li>🔧 <span data-i18n="donate.use_2">Improvements and new features</span></li>
+        <li>🐛 <span data-i18n="donate.use_3">Bug fixes and optimization</span></li>
+        <li>📚 <span data-i18n="donate.use_4">Documentation and tutorials</span></li>
+        <li>☕ <span data-i18n="donate.use_5">Coffee for developers</span> 😊</li>
       </ul>
     </div>
   </div>
 
-  <!-- Agradecimiento -->
+  <!-- Thanks -->
   <div style="text-align:center;padding:32px 20px;background:var(--bg-secondary);border-radius:12px">
-    <h3 style="font-size:1.2rem;margin-bottom:8px">🙏 ¡Gracias por tu apoyo!</h3>
+    <h3 style="font-size:1.2rem;margin-bottom:8px">🙏 <span data-i18n="donate.thanks_title">Thank you for your support!</span></h3>
     <p style="color:var(--text-2);max-width:500px;margin:0 auto">
-      Cada satoshi cuenta y nos motiva a seguir construyendo herramientas útiles 
-      para la comunidad Bitcoin de El Salvador.
+      <span data-i18n="donate.thanks_text_1">Every satoshi counts and motivates us to keep building useful tools</span>
+      <span data-i18n="donate.thanks_text_2">for the Bitcoin community in El Salvador.</span>
     </p>
   </div>
 
   <div style="text-align:center;margin-top:32px">
-    <a href="/" class="btn btn-ghost">← Volver al inicio</a>
+    <a href="/" class="btn btn-ghost">← <span data-i18n="donate.back_home">Back to home</span></a>
   </div>
 </div>
 {% endblock %}
@@ -164,7 +165,7 @@ let currentInvoice = null;
 let pollInterval = null;
 let btcRate = null;
 
-// Actualizar USD cuando el usuario escribe en el input
+// Update USD when user types in the input
 document.addEventListener('DOMContentLoaded', async () => {
   btcRate = await fetchBtcUsdRate();
   
@@ -183,15 +184,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
-// Seleccionar monto sugerido
+// Select suggested amount
 function selectAmount(sats) {
   const input = document.getElementById('custom-amount');
   input.value = sats;
   
-  // Disparar evento para actualizar USD
+  // Trigger update for USD preview
   input.dispatchEvent(new Event('input'));
   
-  // Highlight del botón seleccionado
+  // Highlight selected button
   document.querySelectorAll('.amount-btn').forEach(btn => {
     btn.classList.remove('btn-primary');
     btn.classList.add('btn-outline');
@@ -200,18 +201,18 @@ function selectAmount(sats) {
   event.target.classList.add('btn-primary');
 }
 
-// Generar invoice
+// Generate invoice
 async function generateInvoice() {
   const sats = parseInt(document.getElementById('custom-amount').value);
   
   if (!sats || sats < 1000) {
-    alert('⚠️ Por favor ingresa un monto válido (mínimo 1,000 sats)');
+    alert(`⚠️ ${t('donate.alert_invalid_amount', 'Please enter a valid amount (minimum 1,000 sats).')}`);
     return;
   }
   
   const btn = document.getElementById('generate-btn');
   btn.disabled = true;
-  btn.textContent = '⏳ Generando...';
+  btn.textContent = `⏳ ${t('donate.loading', 'Generating...')}`;
   
   try {
     const response = await fetch('/api/payments/create-donation-invoice', {
@@ -220,7 +221,7 @@ async function generateInvoice() {
       body: JSON.stringify({
         order_id: 'donation',
         amount_sats: sats,
-        memo: `Donación a BitMarket SV - ${sats} sats`
+        memo: `${t('donate.memo', 'Donation to BitMarket SV')} - ${sats} sats`
       })
     });
     
@@ -231,26 +232,26 @@ async function generateInvoice() {
       showInvoice(sats);
       startPolling();
     } else {
-      throw new Error(data.error || 'Error al generar invoice');
+      throw new Error(data.error || t('donate.error_generate', 'Error generating invoice'));
     }
   } catch (error) {
     console.error('Error:', error);
-    alert('❌ Error al generar el invoice. Por favor intenta de nuevo.');
+    alert(`❌ ${t('donate.error_generate_retry', 'Error generating invoice. Please try again.')}`);
     btn.disabled = false;
-    btn.textContent = '🚀 Generar Invoice';
+    btn.textContent = `🚀 ${t('donate.generate', 'Generate Invoice')}`;
   }
 }
 
-// Mostrar invoice
+// Show invoice
 function showInvoice(sats) {
-  // Ocultar formulario
+  // Hide form
   document.getElementById('donation-form').style.display = 'none';
   
-  // Mostrar área de invoice
+  // Show invoice area
   const invoiceArea = document.getElementById('invoice-area');
   invoiceArea.style.display = 'block';
   
-  // Actualizar datos
+  // Update values
   document.getElementById('invoice-sats').textContent = sats.toLocaleString();
   
   if (btcRate) {
@@ -258,18 +259,18 @@ function showInvoice(sats) {
     document.getElementById('invoice-usd').textContent = `≈ $${usd} USD`;
   }
   
-  // Generar QR code usando endpoint del backend
+  // Generate QR code using backend endpoint
   const qrUrl = `/api/payments/qr?text=${encodeURIComponent(currentInvoice.payment_request)}`;
   document.getElementById('qr-image').src = qrUrl;
   
-  // Mostrar BOLT11
+  // Show BOLT11
   document.getElementById('bolt11-text').textContent = currentInvoice.payment_request;
   
-  // Scroll al invoice
+  // Scroll to invoice
   invoiceArea.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Polling para verificar el pago
+// Polling to verify payment
 function startPolling() {
   let elapsed = 0;
   const maxWait = 300; // 5 minutos
@@ -277,14 +278,14 @@ function startPolling() {
   pollInterval = setInterval(async () => {
     elapsed += 2;
     
-    // Actualizar timer
+    // Update timer
     const remaining = maxWait - elapsed;
     const minutes = Math.floor(remaining / 60);
     const seconds = remaining % 60;
     document.getElementById('timer-text').textContent = 
-      `Expira en ${minutes}:${seconds.toString().padStart(2, '0')}`;
+      `${t('donate.expires_in', 'Expires in')} ${minutes}:${seconds.toString().padStart(2, '0')}`;
     
-    // Verificar estado
+    // Check status
     try {
       const response = await fetch(`/api/payments/donation-status/${currentInvoice.payment_hash}`);
       const data = await response.json();
@@ -297,23 +298,23 @@ function startPolling() {
       console.error('Error checking payment:', error);
     }
     
-    // Expirado
+    // Expired
     if (elapsed >= maxWait) {
       clearInterval(pollInterval);
-      alert('⏱️ El invoice ha expirado. Por favor genera uno nuevo.');
+      alert(`⏱️ ${t('donate.alert_expired', 'The invoice has expired. Please generate a new one.')}`);
       cancelInvoice();
     }
   }, 2000);
 }
 
-// Mostrar mensaje de éxito
+// Show success message
 function showSuccess() {
   const sats = parseInt(document.getElementById('invoice-sats').textContent.replace(/,/g, ''));
   
-  // Ocultar invoice
+  // Hide invoice
   document.getElementById('invoice-area').style.display = 'none';
   
-  // Mostrar mensaje de éxito
+  // Show success message
   const successMsg = document.getElementById('success-message');
   successMsg.style.display = 'block';
   
@@ -324,14 +325,14 @@ function showSuccess() {
     document.getElementById('success-usd').textContent = `≈ $${usd} USD`;
   }
   
-  // Scroll al mensaje
+  // Scroll to message
   successMsg.scrollIntoView({ behavior: 'smooth' });
   
-  // Confetti simple (puedes mejorar esto)
-  console.log('🎉 ¡Donación confirmada!');
+  // Simple confetti placeholder
+  console.log(`🎉 ${t('donate.confirmed_log', 'Donation confirmed!')}`);
 }
 
-// Cancelar y volver al formulario
+// Cancel and return to form
 function cancelInvoice() {
   if (pollInterval) {
     clearInterval(pollInterval);
@@ -342,22 +343,22 @@ function cancelInvoice() {
   
   const btn = document.getElementById('generate-btn');
   btn.disabled = false;
-  btn.textContent = '🚀 Generar Invoice';
+  btn.textContent = `🚀 ${t('donate.generate', 'Generate Invoice')}`;
   
   currentInvoice = null;
   
-  // Scroll al formulario
+  // Scroll to form
   document.getElementById('donation-form').scrollIntoView({ behavior: 'smooth' });
 }
 
-// Nueva donación
+// New donation
 function newDonation() {
   document.getElementById('success-message').style.display = 'none';
   document.getElementById('donation-form').style.display = 'block';
   document.getElementById('custom-amount').value = '';
   document.getElementById('custom-usd').textContent = '';
   
-  // Reset botones
+  // Reset buttons
   document.querySelectorAll('.amount-btn').forEach(btn => {
     btn.classList.remove('btn-primary');
     btn.classList.add('btn-outline');
@@ -365,21 +366,21 @@ function newDonation() {
   
   const btn = document.getElementById('generate-btn');
   btn.disabled = false;
-  btn.textContent = '🚀 Generar Invoice';
+  btn.textContent = `🚀 ${t('donate.generate', 'Generate Invoice')}`;
   
   currentInvoice = null;
   
-  // Scroll al formulario
+  // Scroll to form
   document.getElementById('donation-form').scrollIntoView({ behavior: 'smooth' });
 }
 
-// Copiar invoice
+// Copy invoice
 function copyInvoice() {
   const text = document.getElementById('bolt11-text').textContent;
   navigator.clipboard.writeText(text).then(() => {
-    alert('✅ Invoice copiado al portapapeles!');
+    alert(`✅ ${t('donate.alert_copied', 'Invoice copied to clipboard!')}`);
   }).catch(err => {
-    console.error('Error al copiar:', err);
+    console.error(t('donate.error_copy', 'Error copying invoice:'), err);
   });
 }
 </script>

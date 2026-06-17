@@ -6,24 +6,24 @@
 <section class="hero">
   <div class="hero__grid"></div>
   <div class="container hero__inner">
-    <div class="hero__badge">⚡ Powered by Bitcoin Lightning</div>
+    <div class="hero__badge">⚡ <span data-i18n="home.badge">Powered by Bitcoin Lightning</span></div>
     <h1 class="hero__title">
-      The marketplace<br>
-      <span class="hero__accent">for the Bitcoin economy</span>
+      <span data-i18n="home.title_line_1">The marketplace</span><br>
+      <span class="hero__accent" data-i18n="home.title_line_2">for the Bitcoin economy</span>
     </h1>
     <p class="hero__sub">
-      Buy and sell products with instant Bitcoin Lightning payments.<br>
-      No banks. No waiting. No borders.
+      <span data-i18n="home.subtitle">Buy and sell products with instant Bitcoin Lightning payments.</span><br>
+      <span data-i18n="home.subtitle_2">No banks. No waiting. No borders.</span>
     </p>
     <div class="hero__actions">
-      <a href="/products" class="btn btn-primary">Browse products →</a>
-      <a href="/register?role=seller" class="btn btn-outline">Start selling</a>
+      <a href="/products" class="btn btn-primary" data-i18n="home.browse_products">Browse products -></a>
+      <a href="/register?role=seller" class="btn btn-outline" data-i18n="home.start_selling">Start selling</a>
     </div>
     <div class="hero__perks">
-      <span>⚡ Instant settlement</span>
-      <span>🔒 Self-custodial</span>
-      <span>🇸🇻 Built for El Salvador</span>
-      <span>💸 Near-zero fees</span>
+      <span>⚡ <span data-i18n="home.perk_instant">Instant settlement</span></span>
+      <span>🔒 <span data-i18n="home.perk_self_custodial">Self-custodial</span></span>
+      <span>🇸🇻 <span data-i18n="home.perk_built_sv">Built for El Salvador</span></span>
+      <span>💸 <span data-i18n="home.perk_low_fees">Near-zero fees</span></span>
     </div>
   </div>
 </section>
@@ -31,7 +31,7 @@
 <!-- ── Categories ────────────────────────────────────────── -->
 <section class="container page">
   <div class="section-header">
-    <h2 class="section-title">Browse categories</h2>
+    <h2 class="section-title" data-i18n="home.browse_categories">Browse categories</h2>
   </div>
   <div class="categories-row" id="categories-row">
     <div class="category-pill" onclick="filterCat('Electronics')">💻 Electronics</div>
@@ -43,8 +43,8 @@
 
   <!-- ── Featured products ─────────────────────────────── -->
   <div class="section-header" style="margin-top:48px">
-    <h2 class="section-title">Latest products</h2>
-    <a href="/products" class="text-orange text-sm">See all →</a>
+    <h2 class="section-title" data-i18n="home.latest_products">Latest products</h2>
+    <a href="/products" class="text-orange text-sm" data-i18n="home.see_all">See all -></a>
   </div>
 
   <div id="featured-grid" class="products-grid">
@@ -54,10 +54,10 @@
   <!-- ── CTA ───────────────────────────────────────────── -->
   <div class="cta-banner">
     <div>
-      <h2>Start accepting Bitcoin today</h2>
-      <p>Join hundreds of sellers already using Lightning payments.</p>
+      <h2 data-i18n="home.cta_title">Start accepting Bitcoin today</h2>
+      <p data-i18n="home.cta_text">Join hundreds of sellers already using Lightning payments.</p>
     </div>
-    <a href="/register?role=seller" class="btn btn-primary">Create seller account</a>
+    <a href="/register?role=seller" class="btn btn-primary" data-i18n="home.create_seller_account">Create seller account</a>
   </div>
 </section>
 {% endblock %}
@@ -77,10 +77,10 @@ async function loadFeatured() {
     if (!data.products.length) {
       grid.innerHTML = ui.emptyState({
         icon: '📦',
-        title: 'No products yet',
-        description: 'Start the marketplace by publishing the first product.',
+        title: t('home.no_products', 'No products yet'),
+        description: t('home.no_products_desc', 'Start the marketplace by publishing the first product.'),
         actionHref: '/register?role=seller',
-        actionText: 'Be the first seller',
+        actionText: t('home.first_seller', 'Be the first seller'),
       });
       return;
     }
@@ -88,8 +88,8 @@ async function loadFeatured() {
   } catch(e) {
     grid.innerHTML = ui.emptyState({
       icon: '⚠️',
-      title: 'Could not load products',
-      description: 'Try reloading this page in a few seconds.',
+      title: t('home.load_error', 'Could not load products'),
+      description: t('home.load_error_desc', 'Try reloading this page in a few seconds.'),
     });
   }
 }

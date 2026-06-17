@@ -15,21 +15,26 @@
 <header class="navbar">
   <div class="container navbar__inner">
     <a href="/" class="navbar__logo">
-      <span class="navbar__logo-bolt">⚡</span>
-      BitMarket<span class="navbar__logo-sv">SV</span>
+      <img src="/static/img/bitmarket-logo.png" alt="BitMarket SV" class="navbar__logo-img" />
     </a>
 
     <form id="search-form" class="navbar__search">
-      <input id="search-input" type="text" placeholder="Search products…" />
+      <input id="search-input" type="text" placeholder="Search products..." data-i18n-placeholder="nav.search_placeholder" />
       <button type="submit" class="navbar__search-btn">🔍</button>
     </form>
 
     <nav class="navbar__actions" id="navbar-auth">
       <!-- hydrated by app.js -->
-      <a href="/nosotros" class="navbar__link">About us</a>
-      <a href="/cart" class="navbar__link" id="cart-nav-link" title="Cart" style="display:none">🛒</a>
-      <a href="/login"    class="navbar__link">Login</a>
-      <a href="/register" class="navbar__btn">Sign up</a>
+      <a href="/nosotros" class="navbar__link" data-i18n="nav.about">About us</a>
+      <a href="/cart" class="navbar__link" id="cart-nav-link" title="Cart" data-i18n-title="nav.cart" style="display:none">🛒</a>
+      <a href="/login" class="navbar__link" data-i18n="nav.login">Login</a>
+      <a href="/register" class="navbar__btn" data-i18n="nav.signup">Sign up</a>
+      <label class="navbar__lang" title="Language">
+        <select id="lang-switcher" class="navbar__lang-select" onchange="window.i18nSetLang(this.value)">
+          <option value="en" selected>EN</option>
+          <option value="es">ES</option>
+        </select>
+      </label>
     </nav>
   </div>
 </header>
@@ -42,7 +47,7 @@
   <div class="container site-footer__inner">
     <div class="site-footer__brand">
       <h3>BitMarket SV</h3>
-      <p>Built by Cubo+ students.</p>
+      <p data-i18n="footer.built_by">Built by Cubo+ students.</p>
       <div class="site-footer__social">
         <a href="#" aria-label="X" class="icon-link">𝕏</a>
         <a href="#" aria-label="Nostr" class="icon-link">◎</a>
@@ -50,9 +55,9 @@
       </div>
       <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
         <a href="/donate" class="btn btn-sm" style="background:#f7931a;color:#fff;display:inline-flex;align-items:center;gap:8px;font-weight:600">
-          ⚡ Support the project
+          ⚡ <span data-i18n="footer.support_project">Support the project</span>
         </a>
-        <p style="font-size:0.75rem;margin-top:8px;color:var(--text-3)">Bitcoin Lightning donations</p>
+        <p style="font-size:0.75rem;margin-top:8px;color:var(--text-3)" data-i18n="footer.lightning_donations">Bitcoin Lightning donations</p>
       </div>
     </div>
 
