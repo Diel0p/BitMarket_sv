@@ -85,6 +85,12 @@ async function loadProduct() {
       </div>
     `;
     window._product = p;
+
+    const usdEl = document.getElementById('price-usd');
+    if (usdEl) {
+      const usdAmount = rate ? sats2usd(p.price_sats, rate) : null;
+      usdEl.textContent = usdAmount ? `≈ $${usdAmount} USD` : '';
+    }
   } catch(e) {
     page.innerHTML = '<p class="text-muted">Product not found.</p>';
   }
