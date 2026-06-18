@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}SatBack Referrals{% endblock %}
+
+{% block content %}
+<div class="container page satback-page">
+
+  <!-- Hero -->
+  <div class="satback-hero">
+    <div class="satback-badge">🚀 New Initiative — Coming Soon</div>
+    <div class="satback-hero__icon">⚡🎁</div>
+    <h1 class="satback-hero__title">Earn <span class="satback-gradient">SatBack</span> for every friend you bring</h1>
+    <p class="satback-hero__subtitle">
+      Our referral program: share your code, your friends shop on BitMarket SV,
+      and you both earn real Bitcoin back — like cashback, but in sats.
+    </p>
+  </div>
+
+  <!-- Demo referral code -->
+  <div class="card satback-code-card">
+    <div class="card-body" style="text-align:center">
+      <p class="satback-code-label">Your referral code will look like this</p>
+      <div class="satback-code-box">
+        <span id="satback-demo-code">BTC-SV4F9X</span>
+        <button class="btn btn-outline btn-sm" disabled title="Coming soon">📋 Copy</button>
+      </div>
+      <p class="satback-code-hint">Preview only — referral codes aren't active yet.</p>
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <h2 class="satback-section-title">How it will work</h2>
+  <div class="satback-steps">
+    <div class="satback-step">
+      <div class="satback-step__num">1</div>
+      <div class="satback-step__icon">🔗</div>
+      <h3>Share your code</h3>
+      <p>Every BitMarket SV account gets a unique referral code to share with friends, family, or your community.</p>
+    </div>
+    <div class="satback-step">
+      <div class="satback-step__num">2</div>
+      <div class="satback-step__icon">✍️</div>
+      <h3>They sign up</h3>
+      <p>Your friend registers using your code and unlocks their first purchase on the marketplace.</p>
+    </div>
+    <div class="satback-step">
+      <div class="satback-step__num">3</div>
+      <div class="satback-step__icon">⚡</div>
+      <h3>You both earn SatBack</h3>
+      <p>You instantly receive SatBack in sats straight to your Lightning balance — no waiting, no minimums.</p>
+    </div>
+  </div>
+
+  <!-- Reward tiers -->
+  <h2 class="satback-section-title">Illustrative SatBack tiers</h2>
+  <p class="satback-section-sub">Exact numbers are still being designed — here's the idea we're exploring.</p>
+  <div class="satback-tiers">
+    <div class="satback-tier">
+      <div class="satback-tier__emoji">🥉</div>
+      <h3>Starter</h3>
+      <p class="satback-tier__amount">1,000 <span>sats</span></p>
+      <p class="satback-tier__desc">per friend who completes their first order</p>
+    </div>
+    <div class="satback-tier satback-tier--featured">
+      <div class="satback-tier__tag">Most friends</div>
+      <div class="satback-tier__emoji">🥈</div>
+      <h3>Active referrer</h3>
+      <p class="satback-tier__amount">5,000 <span>sats</span></p>
+      <p class="satback-tier__desc">after 5 friends shop on BitMarket SV</p>
+    </div>
+    <div class="satback-tier">
+      <div class="satback-tier__emoji">🥇</div>
+      <h3>Community builder</h3>
+      <p class="satback-tier__amount">+1% <span>cashback</span></p>
+      <p class="satback-tier__desc">ongoing, on every future order from your referrals</p>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="satback-cta">
+    <h2>Be ready when it launches</h2>
+    <p>Create your BitMarket SV account now — your referral code will be waiting for you the moment SatBack goes live.</p>
+    <a href="/register" class="btn btn-primary satback-cta__btn">⚡ Create my account</a>
+    <p class="satback-cta__note">🚧 This page previews an upcoming feature. No referral codes are active yet.</p>
+  </div>
+
+  <div style="text-align:center;margin-top:32px">
+    <a href="/" class="btn btn-ghost">← Back to home</a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.satback-page { max-width: 920px; }
+
+.satback-hero { text-align: center; margin-bottom: 36px; position: relative; }
+.satback-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--orange-glow); color: var(--orange);
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.03em;
+  padding: 6px 14px; border-radius: 999px; margin-bottom: 18px;
+  border: 1px solid rgba(247,147,26,0.3);
+}
+.satback-hero__icon { font-size: 3rem; margin-bottom: 12px; animation: satback-float 3s ease-in-out infinite; }
+.satback-hero__title {
+  font-size: clamp(1.7rem, 6vw, 2.6rem); font-weight: 800; line-height: 1.2;
+  margin-bottom: 14px;
+}
+.satback-gradient {
+  background: linear-gradient(90deg, var(--orange) 0%, #ffd76a 50%, var(--orange) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: satback-shine 4s linear infinite;
+}
+.satback-hero__subtitle { font-size: 1.05rem; color: var(--text-2); max-width: 600px; margin: 0 auto; line-height: 1.6; }
+
+.satback-code-card { margin-bottom: 40px; border: 1px dashed rgba(247,147,26,0.4); }
+.satback-code-label { font-size: 0.85rem; color: var(--text-2); margin-bottom: 14px; }
+.satback-code-box {
+  display: inline-flex; align-items: center; gap: 12px;
+  background: var(--bg-surface); border: 1px solid var(--border-md);
+  border-radius: var(--radius-md); padding: 12px 18px;
+  font-family: var(--mono); font-size: 1.15rem; font-weight: 700; color: var(--orange);
+  letter-spacing: 0.04em;
+}
+.satback-code-hint { font-size: 0.78rem; color: var(--text-3); margin-top: 12px; }
+
+.satback-section-title { font-size: 1.3rem; font-weight: 700; text-align: center; margin-bottom: 8px; }
+.satback-section-sub { text-align: center; color: var(--text-3); font-size: 0.85rem; margin-bottom: 24px; }
+
+.satback-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 48px; }
+.satback-step {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 28px 20px; text-align: center;
+  position: relative; transition: transform 0.2s, border-color 0.2s;
+}
+.satback-step:hover { transform: translateY(-3px); border-color: var(--orange); }
+.satback-step__num {
+  position: absolute; top: 14px; left: 16px;
+  font-family: var(--mono); font-size: 0.75rem; color: var(--text-3); font-weight: 700;
+}
+.satback-step__icon { font-size: 2.2rem; margin-bottom: 12px; }
+.satback-step h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+.satback-step p { font-size: 0.85rem; color: var(--text-2); line-height: 1.5; }
+
+.satback-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 48px; }
+.satback-tier {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 28px 20px; text-align: center;
+  position: relative; transition: transform 0.2s, border-color 0.2s;
+}
+.satback-tier:hover { transform: translateY(-3px); }
+.satback-tier--featured { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange), 0 12px 32px rgba(247,147,26,0.15); }
+.satback-tier__tag {
+  position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+  background: var(--orange); color: #000; font-size: 0.7rem; font-weight: 700;
+  padding: 4px 12px; border-radius: 999px; white-space: nowrap;
+}
+.satback-tier__emoji { font-size: 2rem; margin-bottom: 8px; }
+.satback-tier h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; color: var(--text-2); }
+.satback-tier__amount { font-family: var(--mono); font-size: 1.5rem; font-weight: 800; color: var(--orange); margin-bottom: 6px; }
+.satback-tier__amount span { font-size: 0.85rem; font-weight: 500; color: var(--text-3); }
+.satback-tier__desc { font-size: 0.8rem; color: var(--text-2); line-height: 1.4; }
+
+.satback-cta {
+  text-align: center; padding: 44px 24px; border-radius: var(--radius-xl);
+  background: radial-gradient(circle at top, rgba(247,147,26,0.12), var(--bg-card) 70%);
+  border: 1px solid var(--border);
+}
+.satback-cta h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 10px; }
+.satback-cta p { color: var(--text-2); max-width: 480px; margin: 0 auto 22px; line-height: 1.5; }
+.satback-cta__btn { font-size: 1.05rem; padding: 14px 30px; }
+.satback-cta__note { font-size: 0.78rem; color: var(--text-3); margin-top: 18px; }
+
+@keyframes satback-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes satback-shine {
+  to { background-position: 200% center; }
+}
+
+@media (max-width: 760px) {
+  .satback-steps, .satback-tiers { grid-template-columns: 1fr; }
+  .satback-tier--featured { order: -1; }
+}
+@media (max-width: 480px) {
+  .satback-code-box { font-size: 0.95rem; padding: 10px 14px; flex-wrap: wrap; justify-content: center; }
+}
+</style>
+{% endblock %}

@@ -804,7 +804,7 @@ function productCard(p) {
   return `
     <div class="product-card fade-in">
       <div class="product-card__img">${coverImage
-        ? `<img src="${coverImage}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" />`
+        ? `<img src="${coverImage}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" onerror="this.parentElement.textContent='${emoji}'" />`
         : emoji}
       </div>
       <div class="product-card__body">

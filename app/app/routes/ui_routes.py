@@ -54,6 +54,11 @@ async def donate(request: Request):
     return _r(request, "donate.html")
 
 
+@router.get("/referrals", response_class=HTMLResponse)
+async def referrals(request: Request):
+    return _r(request, "referrals.html")
+
+
 @router.get("/products/{product_id}", response_class=HTMLResponse)
 async def product_detail(request: Request, product_id: str):
     return _r(request, "product_detail.html")

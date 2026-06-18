@@ -6,7 +6,7 @@
   <title>{% block title %}BitMarket SV{% endblock %} — ⚡ Bitcoin Marketplace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/app.css?v=20260617" />
+  <link rel="stylesheet" href="/static/css/app.css?v=20260618" />
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -65,18 +65,21 @@
         <a href="#" aria-label="Nostr" class="icon-link">◎</a>
         <a href="#" aria-label="YouTube" class="icon-link">▶</a>
       </div>
-      <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:10px;align-items:center">
         <a href="/donate" class="btn btn-sm" style="background:#f7931a;color:#fff;display:inline-flex;align-items:center;gap:8px;font-weight:600">
           ⚡ <span data-i18n="footer.support_project">Support the project</span>
         </a>
-        <p style="font-size:0.75rem;margin-top:8px;color:var(--text-3)" data-i18n="footer.lightning_donations">Bitcoin Lightning donations</p>
+        <a href="/referrals" class="btn btn-sm btn-outline" style="display:inline-flex;align-items:center;gap:8px;font-weight:600">
+          🎁 SatBack Referrals
+        </a>
       </div>
+      <p style="font-size:0.75rem;margin-top:8px;color:var(--text-3)" data-i18n="footer.lightning_donations">Bitcoin Lightning donations</p>
     </div>
 
   </div>
 </footer>
 
-<script src="/static/js/app.js?v=20260617001"></script>
+<script src="/static/js/app.js?v=20260618001"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
