@@ -76,6 +76,9 @@ textarea { resize: vertical; min-height: 90px; }
   font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em;
   white-space: nowrap; flex-shrink: 0;
 }
+.navbar__logo-img {
+  height: 40px; width: auto; display: block; filter: drop-shadow(0 0 2px rgba(0,0,0,0.2));
+}
 .navbar__logo-bolt { font-size: 1.3rem; }
 .navbar__logo-sv { color: var(--orange); }
 .navbar__search {
@@ -136,6 +139,25 @@ textarea { resize: vertical; min-height: 90px; }
   transition: background 0.2s;
 }
 .navbar__btn:hover { background: var(--orange-dim); }
+.navbar__lang {
+  display: inline-flex;
+  align-items: center;
+}
+.navbar__lang-select {
+  background: var(--bg-card);
+  color: var(--text-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  height: 32px;
+  padding: 0 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.navbar__lang-select:focus {
+  border-color: var(--orange);
+  outline: none;
+}
 .navbar__avatar {
   width: 32px; height: 32px; border-radius: 50%;
   background: var(--orange-glow);

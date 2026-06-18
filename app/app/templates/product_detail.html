@@ -52,7 +52,7 @@ async function loadProduct() {
               <span class="price-unit"> sats</span>
             </div>
             <p class="text-muted text-sm mono" style="margin-top:4px">≈ ${sats2btc(p.price_sats)} BTC</p>
-            <p class="text-sm" style="margin-top:2px;color:#16a34a;font-weight:500" id="price-usd">Cargando precio USD...</p>
+            <p class="text-sm" style="margin-top:2px;color:#16a34a;font-weight:500" id="price-usd">Loading USD price...</p>
           </div>
 
           <div class="stock-indicator ${p.stock === 0 ? 'out' : p.stock < 5 ? 'low' : 'ok'}">
@@ -66,8 +66,7 @@ async function loadProduct() {
               <button onclick="changeQty(1)">+</button>
             </div>
             ${p.stock > 0 && canBuy
-              ? `<button class="btn btn-primary" style="flex:1" onclick="buyNow()">⚡ Buy now</button>
-                 <button class="btn btn-outline" style="flex:1" onclick="addToCart()">🛒 Add to cart</button>`
+              ? `<button class="btn btn-primary" style="flex:1" onclick="addToCart()">🛒 Add to cart</button>`
               : p.stock > 0 && needLogin
               ? `<a href="/login" class="btn btn-outline" style="flex:1">Login to buy</a>`
               : p.stock === 0
@@ -114,6 +113,22 @@ async function addToCart() {
   const p = window._product;
   if (!p) return;
   try {
+    const cartState = await apiFetch('/cart');
+    const items = cartState?.cart?.items || [];
+    const existing = items.find(item => item.product_id === p.id);
+
+    if (existing) {
+      const confirmed = await confirmAction(
+        `This product is already in your cart (${existing.quantity}). Do you want to add ${qty} more unit${qty !== 1 ? 's' : ''}?`,
+        {
+          title: 'Product already added',
+          confirmText: 'Add again',
+          cancelText: 'Cancel',
+        }
+      );
+      if (!confirmed) return;
+    }
+
     await apiFetch('/cart/items', {
       method: 'POST',
       body: JSON.stringify({ product_id: p.id, quantity: qty }),
@@ -121,7 +136,7 @@ async function addToCart() {
     window.refreshCartCount?.();
     showCartAddedPrompt();
   } catch(e) {
-    showToast(e.message || 'No se pudo agregar al carrito', 'error');
+    showToast(e.message || 'Could not add to cart', 'error');
   }
 }
 
@@ -133,10 +148,10 @@ function showCartAddedPrompt() {
   toast.id = 'cart-added-toast';
   toast.className = 'cart-added-toast fade-in';
   toast.innerHTML = `
-    <p>Producto agregado al carrito.</p>
+    <p>Product added to cart.</p>
     <div class="cart-added-toast__actions">
-      <button class="btn btn-ghost btn-sm" id="continue-shopping-btn">Seguir comprando</button>
-      <a href="/cart" class="btn btn-primary btn-sm">Ir al carrito</a>
+      <button class="btn btn-ghost btn-sm" id="continue-shopping-btn">Continue shopping</button>
+      <a href="/cart" class="btn btn-primary btn-sm">Go to cart</a>
     </div>
   `;
   document.body.appendChild(toast);
@@ -144,29 +159,6 @@ function showCartAddedPrompt() {
   document.getElementById('continue-shopping-btn').addEventListener('click', () => {
     toast.remove();
   });
-}
-
-async function buyNow() {
-  if (!auth.isLoggedIn()) { window.location.href = '/login'; return; }
-  const p = window._product;
-  if (!p) return;
-  try {
-    const order = await apiFetch('/orders', {
-      method: 'POST',
-      body: JSON.stringify({
-        items: [{ product_id: p.id, quantity: qty }],
-        shipping_address: {
-          name: auth.user?.name || 'Buyer',
-          street: 'TBD',
-          city: 'TBD',
-          country: 'TBD',
-        },
-      }),
-    });
-    window.location.href = `/checkout/${order.order_id}?hash=${order.invoice.payment_hash}&amount=${order.invoice.amount_sats}&mock=${order.invoice.is_mock}`;
-  } catch(e) {
-    showToast(e.message || 'No se pudo crear la orden', 'error');
-  }
 }
 
 document.addEventListener('DOMContentLoaded', loadProduct);

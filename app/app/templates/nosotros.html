@@ -1,19 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Nosotros{% endblock %}
+{% block title %}About Us{% endblock %}
 
 {% block content %}
 <section class="about-hero">
   <div class="about-hero__bg"></div>
   <div class="container about-hero__inner">
-    <p class="about-kicker">Conoce BitMarket SV</p>
-    <h1 class="about-title">Comercio local con pagos Lightning, simple y real.</h1>
+    <p class="about-kicker" data-i18n="about.kicker">Meet BitMarket SV</p>
+    <h1 class="about-title" data-i18n="about.title">Local commerce with Lightning payments, simple and real.</h1>
     <p class="about-sub">
-      BitMarket conecta compradores y vendedores para mover la economia local con Bitcoin Lightning:
-      pagos instantaneos, comisiones bajas y una experiencia clara para todos.
+      <span data-i18n="about.subtitle_1">BitMarket connects buyers and sellers to power the local economy with Bitcoin Lightning:</span>
+      <span data-i18n="about.subtitle_2">instant payments, low fees, and a clear experience for everyone.</span>
     </p>
     <div class="about-cta-row">
-      <a href="/products" class="btn btn-primary">Ver productos</a>
-      <a href="/register?role=seller" class="btn btn-outline">Quiero vender</a>
+      <a href="/products" class="btn btn-primary" data-i18n="about.cta_products">Browse products</a>
+      <a href="/register?role=seller" class="btn btn-outline" data-i18n="about.cta_sell">I want to sell</a>
     </div>
   </div>
 </section>
@@ -21,43 +21,43 @@
 <section class="container page about-section">
   <div class="about-grid">
     <article class="about-card">
-      <h2>Nuestra mision</h2>
+      <h2 data-i18n="about.mission_title">Our mission</h2>
       <p>
-        Dar a pequenos y medianos vendedores una vitrina digital moderna, con pagos en Bitcoin Lightning
-        que se confirman en segundos y permiten vender sin friccion.
+        <span data-i18n="about.mission_text_1">Give small and medium sellers a modern digital storefront, with Bitcoin Lightning payments</span>
+        <span data-i18n="about.mission_text_2">that confirm in seconds and enable frictionless selling.</span>
       </p>
     </article>
 
     <article class="about-card">
-      <h2>Como funciona</h2>
+      <h2 data-i18n="about.how_title">How it works</h2>
       <ol class="about-steps">
-        <li><strong>Explora:</strong> el comprador encuentra productos en el catalogo.</li>
-        <li><strong>Paga:</strong> se genera una factura Lightning para pago rapido.</li>
-        <li><strong>Recibe:</strong> la orden se confirma y el vendedor gestiona el envio.</li>
+        <li><strong data-i18n="about.step_explore_label">Explore:</strong> <span data-i18n="about.step_explore_text">the buyer finds products in the catalog.</span></li>
+        <li><strong data-i18n="about.step_pay_label">Pay:</strong> <span data-i18n="about.step_pay_text">a Lightning invoice is generated for fast payment.</span></li>
+        <li><strong data-i18n="about.step_receive_label">Receive:</strong> <span data-i18n="about.step_receive_text">the order is confirmed and the seller manages shipping.</span></li>
       </ol>
     </article>
 
     <article class="about-card">
-      <h2>Transparencia y seguridad</h2>
+      <h2 data-i18n="about.trust_title">Transparency and security</h2>
       <p>
-        BitMarket mantiene trazabilidad basica de ordenes y pagos para que cada operacion tenga un estado claro.
-        Nuestro objetivo es que comprar y vender sea confiable desde el primer clic.
+        <span data-i18n="about.trust_text_1">BitMarket keeps basic traceability for orders and payments so each operation has a clear status.</span>
+        <span data-i18n="about.trust_text_2">Our goal is to make buying and selling trustworthy from the first click.</span>
       </p>
     </article>
 
     <article class="about-card">
-      <h2>Contacto y Apoyo</h2>
-      <p>Estamos construyendo junto a la comunidad Bitcoin de El Salvador.</p>
+      <h2 data-i18n="about.contact_title">Contact and support</h2>
+      <p data-i18n="about.contact_text">We are building together with the Bitcoin community of El Salvador.</p>
       <p class="about-contact">
-        Correo: <a href="mailto:equipo@bitmarket.sv">equipo@bitmarket.sv</a>
+        <span data-i18n="about.contact_email">Email:</span> <a href="mailto:equipo@bitmarket.sv">equipo@bitmarket.sv</a>
       </p>
       <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border)">
-        <p style="font-weight:600;margin-bottom:8px">💛 Apoya el desarrollo</p>
-        <p style="font-size:0.9rem;color:var(--text-2);margin-bottom:12px">
-          Este proyecto es desarrollado por estudiantes. Tu apoyo nos ayuda a mantenerlo y mejorarlo.
+        <p style="font-weight:600;margin-bottom:8px">💛 <span data-i18n="about.support_title">Support development</span></p>
+        <p style="font-size:0.9rem;color:var(--text-2);margin-bottom:12px" data-i18n="about.support_text">
+          This project is developed by students. Your support helps us maintain and improve it.
         </p>
         <a href="/donate" class="btn btn-primary" style="background:#f7931a">
-          ⚡ Donar con Lightning
+          ⚡ <span data-i18n="about.support_cta">Donate with Lightning</span>
         </a>
       </div>
     </article>

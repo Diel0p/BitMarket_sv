@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-narrow">
   <h1 class="section-title" style="text-align:center;margin-bottom:8px">⚡ Checkout</h1>
-  <p class="text-muted text-sm" style="text-align:center;margin-bottom:28px">Revisa tu pedido y paga con Lightning</p>
+  <p class="text-muted text-sm" style="text-align:center;margin-bottom:28px" data-i18n="checkout.subtitle">Review your order and pay with Lightning</p>
 
   <div id="checkout-content">
     <div style="text-align:center"><div class="spinner"></div></div>
@@ -17,6 +17,9 @@
 let cartData = null;
 let pollInterval = null;
 let elapsed = 0;
+let lastCheckoutPayload = null;
+let lastInvoiceResult = null;
+let activePaymentHash = null;
 const INVOICE_TTL = 300;  // 5 minutos
 const MOCK_CONFIRM = 10;
 
@@ -40,15 +43,17 @@ function showEmpty() {
   document.getElementById('checkout-content').innerHTML = `
     <div style="text-align:center;padding:60px 20px">
       <div style="font-size:3rem;margin-bottom:16px">🛒</div>
-      <h2>Carrito vacío</h2>
-      <a href="/products" class="btn btn-primary" style="margin-top:16px">Ver productos</a>
+      <h2 data-i18n="checkout.emptyTitle">Empty cart</h2>
+      <a href="/products" class="btn btn-primary" style="margin-top:16px" data-i18n="checkout.viewProducts">View products</a>
     </div>
   `;
+  applyTranslations();
 }
 
 function showError(msg) {
   document.getElementById('checkout-content').innerHTML =
     `<p class="text-muted" style="text-align:center">${msg}</p>`;
+  applyTranslations();
 }
 
 // ── Step 2: Shipping form ──────────────────────────────────
@@ -63,121 +68,133 @@ function renderCheckoutForm() {
 
   document.getElementById('checkout-content').innerHTML = `
     <div class="cart-summary" style="margin-bottom:20px">
-      <h3 style="margin-bottom:12px">Resumen del pedido</h3>
+      <h3 style="margin-bottom:12px" data-i18n="checkout.orderSummary">Order summary</h3>
       ${rows}
       <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem;padding-top:12px">
-        <span>Total</span>
+        <span data-i18n="checkout.total">Total</span>
         <span>⚡ ${cartData.total_sats.toLocaleString()} sats</span>
       </div>
     </div>
 
     <form id="shipping-form" class="card" style="padding:24px">
-      <h3 style="margin-bottom:16px">Dirección de envío</h3>
+      <h3 style="margin-bottom:16px" data-i18n="checkout.shippingAddress">Shipping Address</h3>
 
       <div class="form-group">
-        <label class="form-label">Nombre completo</label>
-        <input class="form-input" id="f-name" type="text" placeholder="Nombre" minlength="2" maxlength="100" required />
+        <label class="form-label" data-i18n="checkout.fullName">Full name</label>
+        <input class="form-input" id="f-name" type="text" placeholder="Name" minlength="2" maxlength="100" required />
       </div>
       <div class="form-group">
-        <label class="form-label">Calle / Dirección</label>
-        <input class="form-input" id="f-street" type="text" placeholder="Calle y número" minlength="5" maxlength="255" required />
+        <label class="form-label" data-i18n="checkout.street">Street / Address</label>
+        <input class="form-input" id="f-street" type="text" placeholder="Street and number" minlength="5" maxlength="255" required />
       </div>
       <div class="form-group form-grid-2">
         <div>
-          <label class="form-label">Ciudad</label>
-          <input class="form-input" id="f-city" type="text" placeholder="Ciudad" minlength="2" maxlength="120" required />
+          <label class="form-label" data-i18n="checkout.city">City</label>
+          <input class="form-input" id="f-city" type="text" placeholder="City" minlength="2" maxlength="120" required />
         </div>
         <div>
-          <label class="form-label">País</label>
-          <input class="form-input" id="f-country" type="text" placeholder="País" minlength="2" maxlength="80" required />
+          <label class="form-label" data-i18n="checkout.country">Country</label>
+          <input class="form-input" id="f-country" type="text" placeholder="Country" minlength="2" maxlength="80" required />
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Código postal (opcional)</label>
+        <label class="form-label" data-i18n="checkout.postalCode">Postal Code (optional)</label>
         <input class="form-input" id="f-zip" type="text" placeholder="ZIP / CP" maxlength="20" />
       </div>
       <div class="form-group">
-        <label class="form-label">Notas (opcional)</label>
-        <textarea class="form-input" id="f-notes" rows="2" maxlength="600" placeholder="Instrucciones especiales..."></textarea>
+        <label class="form-label" data-i18n="checkout.notes">Notes (optional)</label>
+        <textarea class="form-input" id="f-notes" rows="2" maxlength="600" placeholder="Special instructions..."></textarea>
       </div>
 
-      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px">
-        Generar invoice Lightning →
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px" data-i18n="checkout.generateInvoice">
+        Generate Lightning Invoice →
       </button>
     </form>
   `;
 
   document.getElementById('shipping-form').addEventListener('submit', submitCheckout);
+  applyTranslations();
 }
 
 // ── Step 3: Submit checkout ────────────────────────────────
 async function submitCheckout(e) {
   e.preventDefault();
-  const btn = e.target.querySelector('[type=submit]');
+  const form = e.target;
+  const btn = form.querySelector('[type=submit]');
   btn.disabled = true;
-  btn.textContent = 'Generando invoice…';
+  btn.textContent = t('checkout.generatingInvoice', 'Generating invoice…');
 
-  const sanitizeText = (value, { maxLength, minLength = 0, required = false, field = 'Campo' }) => {
+  const sanitizeText = (value, { maxLength, minLength = 0, required = false, field = 'Field' }) => {
     const cleaned = String(value || '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
     if (!cleaned) {
-      if (required) throw new Error(`${field} es obligatorio.`);
+      if (required) throw new Error(t(`checkout.error_${field.toLowerCase()}Required`, `${field} is required.`));
       return null;
     }
-    if (/[<>]/.test(cleaned)) throw new Error(`${field} contiene caracteres no permitidos.`);
-    if (cleaned.length < minLength) throw new Error(`${field} es demasiado corto.`);
-    if (cleaned.length > maxLength) throw new Error(`${field} excede el maximo permitido.`);
+    if (/[<>]/.test(cleaned)) throw new Error(t('checkout.error_invalidChars', `${field} contains invalid characters.`));
+    if (cleaned.length < minLength) throw new Error(t('checkout.error_tooShort', `${field} is too short.`));
+    if (cleaned.length > maxLength) throw new Error(t('checkout.error_tooLong', `${field} exceeds the maximum allowed.`));
     return cleaned;
   };
 
   try {
-    const payload = {
-      shipping_address: {
-        name: sanitizeText(document.getElementById('f-name').value, { field: 'Nombre', required: true, minLength: 2, maxLength: 100 }),
-        street: sanitizeText(document.getElementById('f-street').value, { field: 'Direccion', required: true, minLength: 5, maxLength: 255 }),
-        city: sanitizeText(document.getElementById('f-city').value, { field: 'Ciudad', required: true, minLength: 2, maxLength: 120 }),
-        country: sanitizeText(document.getElementById('f-country').value, { field: 'Pais', required: true, minLength: 2, maxLength: 80 }),
-        zip: sanitizeText(document.getElementById('f-zip').value, { field: 'Codigo postal', maxLength: 20 }),
-      },
-      notes: sanitizeText(document.getElementById('f-notes').value, { field: 'Notas', maxLength: 600 }),
-    };
+    const payload = buildCheckoutPayload(sanitizeText);
+    lastCheckoutPayload = payload;
 
     const result = await apiFetch('/cart/checkout', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+    lastInvoiceResult = result;
     renderInvoice(result);
   } catch(err) {
     btn.disabled = false;
-    btn.textContent = 'Generar invoice Lightning →';
-    showToast(err.message || 'Error al generar invoice', 'error');
+    btn.textContent = t('checkout.generateInvoice', 'Generate Lightning Invoice →');
+    showToast(err.message || t('checkout.error_generateFailed', 'Error generating invoice'), 'error');
   }
+}
+
+function buildCheckoutPayload(sanitizeText) {
+  return {
+    shipping_address: {
+      name: sanitizeText(document.getElementById('f-name').value, { field: 'Name', required: true, minLength: 2, maxLength: 100 }),
+      street: sanitizeText(document.getElementById('f-street').value, { field: 'Address', required: true, minLength: 5, maxLength: 255 }),
+      city: sanitizeText(document.getElementById('f-city').value, { field: 'City', required: true, minLength: 2, maxLength: 120 }),
+      country: sanitizeText(document.getElementById('f-country').value, { field: 'Country', required: true, minLength: 2, maxLength: 80 }),
+      zip: sanitizeText(document.getElementById('f-zip').value, { field: 'Postal code', maxLength: 20 }),
+    },
+    notes: sanitizeText(document.getElementById('f-notes').value, { field: 'Notes', maxLength: 600 }),
+  };
 }
 
 // ── Step 4: Show invoice + poll ────────────────────────────
 function renderInvoice(result) {
   const isMock = result.is_mock;
   const amountSats = result.amount_sats;
+  activePaymentHash = result.payment_hash || null;
 
   document.getElementById('checkout-content').innerHTML = `
-    ${isMock ? `<div class="mock-banner">🟡 <strong>Mock mode</strong> — el pago se confirma automáticamente en ~${MOCK_CONFIRM} segundos.</div>` : ''}
+    ${isMock ? `<div class="mock-banner">🟡 <strong>${t('checkout.mockMode', 'Mock mode')}</strong> — ${t('checkout.mockInfo', 'payment will confirm automatically in')} ~${MOCK_CONFIRM} ${t('checkout.mockSeconds', 'seconds')}.</div>` : ''}
 
     <div class="invoice-box fade-in" id="invoice-box">
-      <p class="text-muted text-sm" style="margin-bottom:12px">Total a pagar</p>
-      <div class="invoice-amount">⚡ ${amountSats.toLocaleString()} <span style="font-size:1rem;color:var(--text-2)">sats</span></div>
+      <p class="text-muted text-sm" style="margin-bottom:12px" data-i18n="checkout.amountToPay">Amount to pay</p>
+      <div class="invoice-amount">⚡ ${amountSats.toLocaleString()} <span style="font-size:1rem;color:var(--text-2)" data-i18n="checkout.sats">sats</span></div>
       <p class="text-muted text-sm mono" style="margin-top:4px">≈ ${sats2btc(amountSats)} BTC</p>
 
       <div id="qr-wrap" style="margin:24px auto;width:200px;height:200px;background:white;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:16px">
         <div class="spinner"></div>
       </div>
 
-      <div class="invoice-string" id="invoice-str">Cargando…</div>
-      <button class="btn btn-ghost btn-sm" onclick="copyInvoice()" style="margin-bottom:20px">📋 Copiar invoice</button>
+      <div class="invoice-string" id="invoice-str">Loading...</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px">
+        <button class="btn btn-ghost btn-sm" onclick="copyInvoice()" data-i18n="checkout.copyInvoice">📋 Copy invoice</button>
+        <button class="btn btn-outline btn-sm" onclick="cancelInvoice()" data-i18n="checkout.cancelInvoice">❌ Cancel invoice</button>
+      </div>
 
       <hr />
 
       <div class="payment-status-bar" id="status-bar">
         <div class="spinner" style="width:16px;height:16px"></div>
-        <span id="status-text">Esperando pago…</span>
+        <span id="status-text" data-i18n="checkout.awaitingPayment">Awaiting payment...</span>
       </div>
 
       <div style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)" id="expiry-label"></div>
@@ -188,11 +205,11 @@ function renderInvoice(result) {
     <div id="success-box" style="display:none" class="fade-in">
       <div style="text-align:center;padding:40px;background:var(--bg-card);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius-xl);margin-top:16px">
         <div style="font-size:4rem;margin-bottom:12px">⚡</div>
-        <h2 style="font-size:1.8rem;font-weight:700;color:var(--success);letter-spacing:-0.02em">¡Pago confirmado!</h2>
-        <p class="text-muted" style="margin-top:8px">Tu pedido ha sido registrado exitosamente.</p>
+        <h2 style="font-size:1.8rem;font-weight:700;color:var(--success);letter-spacing:-0.02em" data-i18n="checkout.paymentConfirmed">Payment confirmed!</h2>
+        <p class="text-muted" style="margin-top:8px" data-i18n="checkout.orderSuccess">Your order has been successfully recorded.</p>
         <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-          <a href="/orders" class="btn btn-primary">Ver mis pedidos</a>
-          <a href="/products" class="btn btn-outline">Seguir comprando</a>
+          <a href="/orders" class="btn btn-primary" data-i18n="checkout.viewOrders">View my orders</a>
+          <a href="/products" class="btn btn-outline" data-i18n="checkout.continueShopping">Continue shopping</a>
         </div>
       </div>
     </div>
@@ -222,7 +239,7 @@ function renderInvoice(result) {
       const diff = Math.max(0, Math.floor((expiry - Date.now()) / 1000));
       const m = Math.floor(diff / 60).toString().padStart(2,'0');
       const s = (diff % 60).toString().padStart(2,'0');
-      label.textContent = diff > 0 ? `⏱ Invoice expira en ${m}:${s}` : '⏰ Invoice expirada';
+      label.textContent = diff > 0 ? `⏱ ${t('checkout.invoiceExpires', 'Invoice expires in')} ${m}:${s}` : `⏰ ${t('checkout.invoiceExpired', 'Invoice expired')}`;
       if (diff === 0) clearInterval(expiryTick);
     }, 1000);
   }
@@ -237,6 +254,7 @@ function renderInvoice(result) {
     }, 200);
   }
 
+  applyTranslations();
   startPolling(result.payment_hash, isMock);
 }
 
@@ -258,34 +276,82 @@ async function pollStatus(paymentHash, isMock) {
       clearInterval(pollInterval);
       showExpiredMessage();
     } else {
-      const t = document.getElementById('status-text');
-      if (t) t.textContent = isMock
-        ? `Mock mode — confirmando en ~${Math.max(0, MOCK_CONFIRM - Math.round(elapsed))}s…`
-        : 'Esperando pago Lightning…';
+      const t_elem = document.getElementById('status-text');
+      if (t_elem) t_elem.textContent = isMock
+        ? `${t('checkout.mockMode', 'Mock mode')} — ${t('checkout.mockConfirming', 'confirming in')} ~${Math.max(0, MOCK_CONFIRM - Math.round(elapsed))}s…`
+        : t('checkout.awaitingLightning', 'Awaiting Lightning payment…');
     }
   } catch(_) {}
 }
 
 function showExpiredMessage() {
-  document.getElementById('invoice-box').style.display = 'none';
-  document.getElementById('status-bar').style.display = 'none';
+  const invoiceBox = document.getElementById('invoice-box');
+  const statusBar = document.getElementById('status-bar');
+  if (invoiceBox) invoiceBox.style.display = 'none';
+  if (statusBar) statusBar.style.display = 'none';
+  activePaymentHash = null;
   const checkout = document.getElementById('checkout-content');
   if (checkout) {
     checkout.innerHTML = `
       <div class="fade-in" style="text-align:center;padding:40px;background:var(--bg-card);border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius-xl);margin-top:16px">
         <div style="font-size:3.5rem;margin-bottom:12px">⏱️</div>
-        <h2 style="font-size:1.6rem;font-weight:700;color:#ef4444;margin-bottom:8px">Invoice Expirado</h2>
-        <p class="text-muted" style="margin-bottom:24px;line-height:1.6">
-          El tiempo para pagar este invoice ha expirado (5 minutos).<br>
-          Tu carrito ha sido restaurado. Por favor, intenta de nuevo.
+        <h2 style="font-size:1.6rem;font-weight:700;color:#ef4444;margin-bottom:8px" data-i18n="checkout.invoiceTitle">Invoice Expired</h2>
+        <p class="text-muted" style="margin-bottom:24px;line-height:1.6" data-i18n="checkout.invoiceExpiredMsg">
+          The time to pay this invoice has expired (5 minutes). Your cart remains intact so you can generate a new invoice.
         </p>
         <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-          <button onclick="window.location.reload()" class="btn btn-primary">🔄 Reintentar</button>
-          <a href="/cart" class="btn btn-outline">🛒 Volver al carrito</a>
-          <a href="/products" class="btn btn-ghost">🏠 Seguir comprando</a>
+          <button onclick="retryCheckout()" class="btn btn-primary" data-i18n="checkout.retry">🔄 Retry</button>
+          <a href="/cart" class="btn btn-outline" data-i18n="checkout.backCart">🛒 Back to cart</a>
+          <a href="/products" class="btn btn-ghost" data-i18n="checkout.shopping">🏠 Continue shopping</a>
         </div>
       </div>
     `;
+    applyTranslations();
+  }
+}
+
+async function cancelInvoice() {
+  if (!activePaymentHash) {
+    showToast(t('checkout.error_noInvoice', 'No active invoice to cancel'), 'error');
+    return;
+  }
+
+  const confirmed = await confirmAction(t('checkout.cancelConfirm', 'This invoice will be cancelled and your products will remain in your cart. Do you want to continue?'), {
+    title: t('checkout.cancelTitle', 'Cancel invoice'),
+    confirmText: t('checkout.yes', 'Yes, cancel'),
+    cancelText: t('common.no', 'No'),
+  });
+  if (!confirmed) return;
+
+  try {
+    await apiFetch(`/cart/cancel-invoice/${activePaymentHash}`, { method: 'POST' });
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+    activePaymentHash = null;
+    showToast(t('checkout.cancelSuccess', 'Invoice cancelled. Your cart remains intact.'), 'success');
+    window.location.href = '/cart';
+  } catch (err) {
+    showToast(err.message || t('checkout.error_cancelFailed', 'Could not cancel the invoice'), 'error');
+  }
+}
+
+async function retryCheckout() {
+  if (!lastCheckoutPayload) {
+    window.location.reload();
+    return;
+  }
+
+  try {
+    const result = await apiFetch('/cart/checkout', {
+      method: 'POST',
+      body: JSON.stringify(lastCheckoutPayload),
+    });
+    lastInvoiceResult = result;
+    renderInvoice(result);
+  } catch (err) {
+    showToast(err.message || t('checkout.error_retryFailed', 'Could not generate a new invoice'), 'error');
   }
 }
 
@@ -293,7 +359,7 @@ function copyInvoice() {
   const txt = document.getElementById('invoice-str')?.textContent;
   if (txt) {
     navigator.clipboard.writeText(txt);
-    showToast('Invoice copiada', 'success');
+    showToast(t('checkout.invoiceCopied', 'Invoice copied'), 'success');
   }
 }
 

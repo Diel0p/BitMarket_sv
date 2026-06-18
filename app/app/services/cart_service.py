@@ -6,7 +6,7 @@ Manages the shopping cart lifecycle:
   - add_item / remove_item / clear_cart
   - Cart auto-expires 20 min after first item is added
   - checkout() generates ONE Lightning invoice (total carrito)
-  - After payment confirmed → distributes payouts per vendor internally
+    - After payment confirmed → distributes payouts per vendor internally
 
 Cart document structure (stored in "carts" collection):
 {
@@ -14,7 +14,7 @@ Cart document structure (stored in "carts" collection):
   "buyer_id": str,
   "items": [ { product_id, title, price_sats, quantity, subtotal_sats, seller_id } ],
   "total_sats": int,
-  "status": "active" | "checked_out" | "expired" | "cancelled",
+    "status": "active" | "checked_out" | "expired" | "cancelled",
   "expires_at": ISO str  (20 min from creation),
   "created_at": ISO str,
 }
@@ -68,6 +68,15 @@ def _assert_active(cart: dict) -> None:
         raise HTTPException(status_code=410, detail="Cart has expired")
 
 
+def _reactivate_cart_from_checkout(cart: dict) -> dict:
+    """Return a checked_out cart back to active so buyer can retry checkout."""
+    return db_update("carts", cart["id"], {
+        "status": "active",
+        "cart_order_id": None,
+        "expires_at": _expires_at(CART_TTL_MINUTES),
+    })
+
+
 # ── Public API ─────────────────────────────────────────────
 
 def get_cart(buyer_id: str) -> dict | None:
@@ -76,6 +85,37 @@ def get_cart(buyer_id: str) -> dict | None:
     if cart and _is_expired(cart):
         db_update("carts", cart["id"], {"status": "expired"})
         return None
+    if cart:
+        return cart
+
+    # Recover a checked-out cart when its invoice is no longer payable,
+    # so products are visible again in /cart even without checkout polling.
+    checked_out = db_find_one("carts", buyer_id=buyer_id, status="checked_out")
+    if not checked_out:
+        return None
+
+    cart_order_id = checked_out.get("cart_order_id")
+    if not cart_order_id:
+        return _reactivate_cart_from_checkout(checked_out)
+
+    cart_order = db_find_one("cart_orders", id=cart_order_id)
+    if not cart_order:
+        return _reactivate_cart_from_checkout(checked_out)
+
+    payment_status = cart_order.get("payment_status")
+    if payment_status in {"expired", "cancelled"}:
+        return _reactivate_cart_from_checkout(checked_out)
+
+    if payment_status == "awaiting_payment":
+        invoice_expires = cart_order.get("invoice_expires_at")
+        if invoice_expires:
+            exp = datetime.fromisoformat(invoice_expires)
+            if exp.tzinfo is None:
+                exp = exp.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) > exp:
+                db_update("cart_orders", cart_order["id"], {"payment_status": "expired"})
+                return _reactivate_cart_from_checkout(checked_out)
+
     return cart
 
 
@@ -302,14 +342,11 @@ async def confirm_payment(payment_hash: str) -> dict:
             exp = exp.replace(tzinfo=timezone.utc)
         if datetime.now(timezone.utc) > exp and cart_order["payment_status"] != "paid":
             db_update("cart_orders", cart_order["id"], {"payment_status": "expired"})
-            # Cancel and clear cart after invoice expiry so stale items are not kept locked in checkout state.
+            # Keep the selected products in the cart so the buyer can retry with a fresh invoice.
             if cart_order.get("cart_id"):
-                db_update("carts", cart_order["cart_id"], {
-                    "status": "expired",
-                    "items": [],
-                    "total_sats": 0,
-                    "expires_at": _now_iso(),
-                })
+                checked_cart = db_find_one("carts", id=cart_order["cart_id"])
+                if checked_cart:
+                    _reactivate_cart_from_checkout(checked_cart)
             return {"paid": False, "expired": True, "cart_order_id": cart_order["id"]}
 
     status = await payment_service.check_invoice_status(payment_hash)
@@ -351,6 +388,31 @@ async def confirm_payment(payment_hash: str) -> dict:
         "payout_status": payout_result["payout_status"],
         "payment_request": cart_order.get("payment_request"),
         "order_ids": created_order_ids,
+    }
+
+
+def cancel_invoice(payment_hash: str, buyer_id: str) -> dict:
+    """Cancel an unpaid cart invoice and reactivate the buyer cart."""
+    cart_order = db_find_one("cart_orders", payment_hash=payment_hash, buyer_id=buyer_id)
+    if not cart_order:
+        raise HTTPException(status_code=404, detail="Cart invoice not found")
+
+    status = cart_order.get("payment_status")
+    if status == "paid":
+        raise HTTPException(status_code=409, detail="Paid invoice cannot be cancelled")
+
+    if status not in {"cancelled", "expired"}:
+        db_update("cart_orders", cart_order["id"], {"payment_status": "cancelled"})
+
+    if cart_order.get("cart_id"):
+        checked_cart = db_find_one("carts", id=cart_order["cart_id"])
+        if checked_cart and checked_cart.get("status") == "checked_out":
+            _reactivate_cart_from_checkout(checked_cart)
+
+    return {
+        "cancelled": True,
+        "cart_order_id": cart_order["id"],
+        "payment_status": "cancelled" if status not in {"cancelled", "expired"} else status,
     }
 
 

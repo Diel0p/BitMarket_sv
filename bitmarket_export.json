@@ -1,0 +1,1142 @@
+{
+  "meta": {
+    "exported_at_utc": "2026-06-17T16:39:14.493523+00:00",
+    "format": "json",
+    "source": "postgresql",
+    "collections": [
+      "users",
+      "products",
+      "orders",
+      "invoices",
+      "carts",
+      "cart_orders"
+    ]
+  },
+  "collections": {
+    "users": [
+      {
+        "id": "7a5f50838e404c21820b2ca3b696faff",
+        "name": "Super Admin",
+        "role": "admin",
+        "email": "admin@bitmarket.sv",
+        "is_active": true,
+        "created_at": "2026-06-12T14:59:06.278269+00:00",
+        "hashed_password": "$2b$12$9TRSa1DziyDFZM51QTJZ4eF1.0DrV7Zat1UIa14svAH0GvVF6Vnb."
+      },
+      {
+        "id": "86d6e69d2f7349dea750d01b720ee7ec",
+        "name": "jose",
+        "role": "seller",
+        "email": "jose@gmail.com",
+        "phone": "6746-7868",
+        "address": "stree buena vista",
+        "district": "La Libertad Centro",
+        "is_active": true,
+        "created_at": "2026-06-12T15:11:57.599251+00:00",
+        "department": "La Libertad",
+        "store_name": "joseStore",
+        "municipality": "La Libertad Centro",
+        "hashed_password": "$2b$12$dOc2eCLz/mHaAXW2uMlJOe2mq5AnH53MU2SOQdFqRvJhjyver6deu",
+        "lightning_address": "http://13.59.253.146:5000/wallet/88a68ec1b80142ab9d7ae1f1efbc0d05",
+        "lnbits_invoice_key": "688137d9f2944edd95f9c74f0598c648"
+      },
+      {
+        "id": "cf4c0bd5f2724334ba543fc3360a24a2",
+        "name": "maria",
+        "role": "buyer",
+        "email": "maria@gmail.com",
+        "phone": "6782-8395",
+        "address": "casa 45",
+        "district": "Apopa",
+        "is_active": true,
+        "created_at": "2026-06-12T15:14:21.969283+00:00",
+        "department": "San Salvador",
+        "municipality": "San Salvador Oeste",
+        "hashed_password": "$2b$12$Ybm1JKzYyx/MezMNTzE.1uw8LyI/RLzfU/4qL8UFY/b00WUT9ZKVu"
+      },
+      {
+        "id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+        "name": "Liliana12",
+        "role": "seller",
+        "email": "liliana@gmail.com",
+        "phone": "7867-5645",
+        "address": "Avenida el calbario",
+        "district": "Santa Ana Centro",
+        "is_active": true,
+        "created_at": "2026-06-12T15:34:05.999839+00:00",
+        "department": "Santa Ana",
+        "store_name": "Liliana",
+        "municipality": "Santa Ana Centro",
+        "hashed_password": "$2b$12$iGIA./sWcZ3rMmq0LHtc7.JIKhf0h2lUobdhlRhpaKvfQF7SHyJpK",
+        "lightning_address": "http://13.59.253.146:5000/wallet/88a68ec1b80142ab9d7ae1f1efbc0d05",
+        "lnbits_invoice_key": "688137d9f2944edd95f9c74f0598c648"
+      },
+      {
+        "id": "2a8e383ab2964feaba116275fa70b148",
+        "name": "jose",
+        "role": "seller",
+        "email": "josezavaleta@gmail.com",
+        "phone": "7846-7278",
+        "address": "calle avenidad",
+        "district": "Nejapa",
+        "is_active": true,
+        "created_at": "2026-06-12T15:47:36.272163+00:00",
+        "department": "San Salvador",
+        "store_name": "Josssstore",
+        "municipality": "San Salvador Oeste",
+        "hashed_password": "$2b$12$NGEkYVB/NVzd/yrXSWba/ObTHIT3k7y2ndKoPhhDPZZwqFMVPNUUe",
+        "lightning_address": "http://13.59.253.146:5000/wallet/551e85fac89b4077b49236a8373756fc",
+        "lnbits_invoice_key": "34eddcf7902c46e4a892c03a395d4d86"
+      },
+      {
+        "id": "8e7504674bad4ad785e1c27f776b6824",
+        "name": "sofia",
+        "role": "buyer",
+        "email": "sofian@gmail.com",
+        "phone": "7865-4536",
+        "address": "calle",
+        "district": "Chalatenango Centro",
+        "is_active": true,
+        "created_at": "2026-06-12T15:51:08.542739+00:00",
+        "department": "Chalatenango",
+        "municipality": "Chalatenango Centro",
+        "hashed_password": "$2b$12$Lx.RKbfUI8TT6JLcb.Viuu8zykGAK1yuTlo.skmOlV0qhJcYI5DXy"
+      },
+      {
+        "id": "aea0523fd7b5450983c48ec8ffdbf6d3",
+        "name": "Jose Jimenez",
+        "role": "seller",
+        "email": "josealegchavez24@gmail.com",
+        "phone": "7689-4065",
+        "address": "Canton El Morro, Santiago Texacuangos San Salvador",
+        "district": "Soyapango",
+        "is_active": true,
+        "created_at": "2026-06-16T17:01:52.123542+00:00",
+        "department": "San Salvador",
+        "store_name": "Storeone",
+        "municipality": "San Salvador Este",
+        "hashed_password": "$2b$12$yC.yxdKfsGfjtnuZ63tXu.JudnRieS.Hvmu3n4Ybx4VTZzt8sQ2Ge",
+        "lightning_address": "chepegc16@blink.sv"
+      },
+      {
+        "id": "2d00b159d59c429eae5f54be31d70bfa",
+        "name": "Ricardo Fuentes",
+        "role": "buyer",
+        "email": "ricardof@gmail.com",
+        "phone": "6056-9054",
+        "address": "col.soya city",
+        "district": "San Salvador",
+        "is_active": true,
+        "created_at": "2026-06-16T17:09:57.228829+00:00",
+        "department": "San Salvador",
+        "municipality": "San Salvador Centro",
+        "hashed_password": "$2b$12$xf8En4z9AMF7kNdTVYJjeefNGPbujQ2ronQ5NKRNGn7rY0NNUy6vW"
+      }
+    ],
+    "products": [
+      {
+        "id": "28e019f1dc524f23819be82e56657d4b",
+        "tags": [
+          "bitcoin"
+        ],
+        "stock": 49,
+        "title": "shirt",
+        "images": [
+          "/static/uploads/products/86d6e69d2f7349dea750d01b720ee7ec_29462e461fa64708b5a46000421de50b.jpg",
+          "/static/uploads/products/86d6e69d2f7349dea750d01b720ee7ec_1dbe8e0ea49947f5aab06026e37dafcb.jpg"
+        ],
+        "status": "active",
+        "category": "Electronics",
+        "price_btc": 1e-06,
+        "seller_id": "86d6e69d2f7349dea750d01b720ee7ec",
+        "created_at": "2026-06-12T15:13:13.587441+00:00",
+        "price_sats": 100,
+        "description": "beatiful shirs",
+        "seller_name": "jose"
+      },
+      {
+        "id": "bee8cb22bcbc4bcb9479e4d37dcd5feb",
+        "tags": [
+          "bitcoin"
+        ],
+        "stock": 19,
+        "title": "Fhone Samsung",
+        "images": [
+          "/static/uploads/products/2a8e383ab2964feaba116275fa70b148_933f662c6b9d478f9087ce4cca1964fa.jpg"
+        ],
+        "status": "active",
+        "category": "Electronics",
+        "price_btc": 1e-06,
+        "seller_id": "2a8e383ab2964feaba116275fa70b148",
+        "created_at": "2026-06-12T15:48:55.835782+00:00",
+        "price_sats": 100,
+        "description": "beatiful fhone",
+        "seller_name": "jose"
+      },
+      {
+        "id": "1126db402237465891a0fe004c82876b",
+        "tags": [
+          "bitcoin"
+        ],
+        "stock": 39,
+        "title": "bitcoin book",
+        "images": [
+          "/static/uploads/products/0137ed77e28a4c75a1ddeafb5f1f60d1_b739e50c95014239a991fb60ad73623b.jpg",
+          "/static/uploads/products/0137ed77e28a4c75a1ddeafb5f1f60d1_770daecdaf864f96bf7288f473e301df.jpg"
+        ],
+        "status": "active",
+        "category": "Electronics",
+        "price_btc": 1e-06,
+        "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+        "created_at": "2026-06-12T15:38:11.954878+00:00",
+        "price_sats": 100,
+        "description": "Book about the history of money and the origin of Bitcoin",
+        "seller_name": "Liliana12"
+      },
+      {
+        "id": "a0cc8059ef09401ab5036ed004c98b82",
+        "tags": [
+          "bitcoin"
+        ],
+        "stock": 32,
+        "title": "Fhone LG",
+        "images": [
+          "/static/uploads/products/0137ed77e28a4c75a1ddeafb5f1f60d1_179fdc0f599f42db835dd0e3cf492714.jpg"
+        ],
+        "status": "active",
+        "category": "Electronics",
+        "price_btc": 8e-07,
+        "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+        "created_at": "2026-06-15T14:13:31.311406+00:00",
+        "price_sats": 80,
+        "description": "bonitos campos aleatorios",
+        "seller_name": "Liliana12"
+      },
+      {
+        "id": "df2bae099c2e476fa4ded30f79fe3afd",
+        "tags": [
+          "bitcoin"
+        ],
+        "stock": 8,
+        "title": "tazas",
+        "images": [
+          "/static/uploads/products/aea0523fd7b5450983c48ec8ffdbf6d3_9e0d5df121b54981a3a74ac45fe50fd8.jpg"
+        ],
+        "status": "active",
+        "category": "Other",
+        "price_btc": 2e-06,
+        "seller_id": "aea0523fd7b5450983c48ec8ffdbf6d3",
+        "created_at": "2026-06-16T17:03:53.907160+00:00",
+        "price_sats": 200,
+        "description": "tazas personalizadas",
+        "seller_name": "Jose Jimenez"
+      }
+    ],
+    "orders": [
+      {
+        "id": "ae4d8e67fc2d4fa7a60d0b3d6f2ecd08",
+        "items": [
+          {
+            "title": "shirt",
+            "quantity": 1,
+            "seller_id": "86d6e69d2f7349dea750d01b720ee7ec",
+            "price_sats": 100,
+            "product_id": "28e019f1dc524f23819be82e56657d4b",
+            "subtotal_sats": 100,
+            "fulfillment_status": "pending"
+          }
+        ],
+        "notes": "---------",
+        "paid_at": "2026-06-12T15:17:08.030337+00:00",
+        "buyer_id": "cf4c0bd5f2724334ba543fc3360a24a2",
+        "total_btc": 1e-06,
+        "created_at": "2026-06-12T15:15:48.378656+00:00",
+        "invoice_id": "c1b30f494fbd0a55fd0e13f9fca07d781abd1061ddb5c46aa76021bdcd323e39",
+        "total_sats": 100,
+        "order_status": "confirmed",
+        "cart_order_id": "1d5cfd2a48aa405e810c2ab8dcb05db5",
+        "payment_status": "paid",
+        "seller_net_sats": 97,
+        "shipping_address": {
+          "zip": "1114",
+          "city": "san salvador",
+          "name": "carlos",
+          "street": "calle",
+          "country": "El Salvador"
+        },
+        "platform_fee_sats": 3,
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "5cfaaf7ffab4417a888799639506903b",
+        "items": [
+          {
+            "title": "Fhone Samsung",
+            "quantity": 1,
+            "seller_id": "2a8e383ab2964feaba116275fa70b148",
+            "price_sats": 100,
+            "product_id": "bee8cb22bcbc4bcb9479e4d37dcd5feb",
+            "subtotal_sats": 100,
+            "fulfillment_status": "pending"
+          }
+        ],
+        "notes": "------",
+        "paid_at": "2026-06-12T15:53:45.671528+00:00",
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "total_btc": 1e-06,
+        "created_at": "2026-06-12T15:52:45.637386+00:00",
+        "invoice_id": "a257d60d638c97a82a62f90383509de860662a450eaaffcf981379bc519a5e8b",
+        "total_sats": 100,
+        "order_status": "confirmed",
+        "cart_order_id": "3c783da8eb704bf29b50b8a9ca361855",
+        "payment_status": "paid",
+        "seller_net_sats": 97,
+        "shipping_address": {
+          "zip": "1114",
+          "city": "marbella",
+          "name": "maria",
+          "street": "bonita",
+          "country": "El Salvador"
+        },
+        "platform_fee_sats": 3,
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "1cb3bf7810094bb99f9a7f8204c1e4da",
+        "items": [
+          {
+            "title": "bitcoin book",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 100,
+            "product_id": "1126db402237465891a0fe004c82876b",
+            "subtotal_sats": 100,
+            "fulfillment_status": "pending"
+          }
+        ],
+        "notes": "------",
+        "paid_at": "2026-06-12T15:53:45.671528+00:00",
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "total_btc": 1e-06,
+        "created_at": "2026-06-12T15:52:45.637386+00:00",
+        "invoice_id": "a257d60d638c97a82a62f90383509de860662a450eaaffcf981379bc519a5e8b",
+        "total_sats": 100,
+        "order_status": "confirmed",
+        "cart_order_id": "3c783da8eb704bf29b50b8a9ca361855",
+        "payment_status": "paid",
+        "seller_net_sats": 97,
+        "shipping_address": {
+          "zip": "1114",
+          "city": "marbella",
+          "name": "maria",
+          "street": "bonita",
+          "country": "El Salvador"
+        },
+        "platform_fee_sats": 3,
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "4fa0d1fec94343858c57946f7faa9055",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80,
+            "fulfillment_status": "pending"
+          }
+        ],
+        "notes": "-----",
+        "paid_at": "2026-06-16T16:54:05.240002+00:00",
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "total_btc": 8e-07,
+        "created_at": "2026-06-16T16:53:42.573918+00:00",
+        "invoice_id": "0eff1259269de0eda5f0bf98a793e0e30dffbc8dd50ca801473b0ea6f8ca2abf",
+        "total_sats": 80,
+        "order_status": "confirmed",
+        "cart_order_id": "e00c4d888b444ea2b421f82b9b317a42",
+        "payment_status": "paid",
+        "seller_net_sats": 78,
+        "shipping_address": {
+          "zip": "1115",
+          "city": "Sonsonate",
+          "name": "maria",
+          "street": "NUEVOS DATOS",
+          "country": "Guatemala"
+        },
+        "platform_fee_sats": 2,
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "d88efbd655494df29ba00d5213490c57",
+        "items": [
+          {
+            "title": "tazas",
+            "quantity": 1,
+            "seller_id": "aea0523fd7b5450983c48ec8ffdbf6d3",
+            "price_sats": 200,
+            "product_id": "df2bae099c2e476fa4ded30f79fe3afd",
+            "subtotal_sats": 200,
+            "fulfillment_status": "pending"
+          }
+        ],
+        "notes": null,
+        "paid_at": "2026-06-16T17:12:33.928044+00:00",
+        "buyer_id": "2d00b159d59c429eae5f54be31d70bfa",
+        "total_btc": 2e-06,
+        "created_at": "2026-06-16T17:11:07.251850+00:00",
+        "invoice_id": "6bb8e4ee84c6a1140819d91bda62a3a162fd3de30438ac202adb6f1c7e02acfb",
+        "total_sats": 200,
+        "order_status": "confirmed",
+        "cart_order_id": "41f7f5fe18a94585937a42e3345067f7",
+        "payment_status": "paid",
+        "seller_net_sats": 194,
+        "shipping_address": {
+          "zip": "1114",
+          "city": "soyapango",
+          "name": "ricardo",
+          "street": "col.soyacity",
+          "country": "el salvador"
+        },
+        "platform_fee_sats": 6,
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "29924514be9847218bd60c3e88517146",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80,
+            "fulfillment_status": "pending"
+          }
+        ],
+        "notes": "-----",
+        "paid_at": "2026-06-16T23:48:08.871853+00:00",
+        "buyer_id": "2d00b159d59c429eae5f54be31d70bfa",
+        "total_btc": 8e-07,
+        "created_at": "2026-06-16T23:47:11.933451+00:00",
+        "invoice_id": "720076e4eb8e8efbf3636cb790283cfbc1c5a8f588905ff5331d23b85b30263b",
+        "total_sats": 80,
+        "order_status": "confirmed",
+        "cart_order_id": "3541945e7c3b43a38967ea17280189d9",
+        "payment_status": "paid",
+        "seller_net_sats": 78,
+        "shipping_address": {
+          "zip": "1114",
+          "city": "Ahucahapan",
+          "name": "maria elena",
+          "street": "numeros aleatorios",
+          "country": "El Salvador"
+        },
+        "platform_fee_sats": 2,
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "f8e7c7196e294e2bad442a4ce064076c",
+        "items": [
+          {
+            "title": "tazas",
+            "quantity": 1,
+            "seller_id": "aea0523fd7b5450983c48ec8ffdbf6d3",
+            "price_sats": 200,
+            "product_id": "df2bae099c2e476fa4ded30f79fe3afd",
+            "subtotal_sats": 200,
+            "fulfillment_status": "pending"
+          }
+        ],
+        "notes": "-----",
+        "paid_at": "2026-06-16T23:48:08.871853+00:00",
+        "buyer_id": "2d00b159d59c429eae5f54be31d70bfa",
+        "total_btc": 2e-06,
+        "created_at": "2026-06-16T23:47:11.933451+00:00",
+        "invoice_id": "720076e4eb8e8efbf3636cb790283cfbc1c5a8f588905ff5331d23b85b30263b",
+        "total_sats": 200,
+        "order_status": "confirmed",
+        "cart_order_id": "3541945e7c3b43a38967ea17280189d9",
+        "payment_status": "paid",
+        "seller_net_sats": 194,
+        "shipping_address": {
+          "zip": "1114",
+          "city": "Ahucahapan",
+          "name": "maria elena",
+          "street": "numeros aleatorios",
+          "country": "El Salvador"
+        },
+        "platform_fee_sats": 6,
+        "marketplace_fee_percent": 3.0
+      }
+    ],
+    "invoices": [
+      {
+        "id": "e337a52ec40243dfbf83ff1b1c22fbd6",
+        "status": "pending",
+        "is_mock": false,
+        "paid_at": null,
+        "buyer_id": null,
+        "order_id": "donation",
+        "created_at": "2026-06-16T21:01:09.100030+00:00",
+        "expires_at": "2026-06-16T21:06:09.099867+00:00",
+        "amount_sats": 1000,
+        "payment_hash": "032851680a62c07086205762282f7ceaf0d47175b3a2d96d03736d1ac526875b",
+        "payment_request": "lnbc10u1p4rrwvnpp5qv59z6q2vtq8pp3q2a3zstmuatcdgut4kw3djmgrwdk343fxsadsdp6g3hkuctrd8pmxm3qvysyy6t5f4shy6m9wss9x43q95srzvpsxqs8xct5wvcqzpuxqrwzqsp57pedfwt3tjyh8qcrvn89s0rty0mlhhlv2g2r6rza9est32dquf3q9qxpqysgqjprxd6mg84lsz73gx38jtg2nzrg90gfvmcegesnglv59fk6w3gpsp0u7xw9txa9xg6u4gzjltu3mv6uyugz2y32d85gldx2rujzp86gp2e36j0"
+      },
+      {
+        "id": "1349a405fa234000bc8a48844628d074",
+        "status": "paid",
+        "is_mock": false,
+        "paid_at": "2026-06-16T23:15:48.471118+00:00",
+        "buyer_id": null,
+        "order_id": "donation",
+        "created_at": "2026-06-16T23:13:09.571628+00:00",
+        "expires_at": "2026-06-16T23:18:09.571533+00:00",
+        "amount_sats": 1000,
+        "payment_hash": "a9b103b28092d463b0837ad8cb2065c592994955e9c821c7b9ea66f2094d2daf",
+        "payment_request": "lnbc10u1p4rrkyrpp54xcs8v5qjt2x8vyr0tvvkgr9ckffjj24a8yzr3aeafn0yz2d9khsdp6g3hkuctrd8pmxm3qvysyy6t5f4shy6m9wss9x43q95srzvpsxqs8xct5wvcqzpuxqrwzqsp5r7w7a0trtrsenljh9hgm3528rapjrus2mlhcmtz0kg5yuxavlnfq9qxpqysgqkm06plfkwmzcjkktrcr9wccjer0ctdjyxmshu3mhay3p4ur2grwh6fewtmc98cj0fzasxf9j52wt9v3aq92gtfxlsnfk8q8q4ash8hqpj0vuz4"
+      }
+    ],
+    "carts": [
+      {
+        "id": "91ce5df7dc05431b856ad4c58c3e6fb0",
+        "items": [
+          {
+            "title": "shirt",
+            "quantity": 1,
+            "seller_id": "86d6e69d2f7349dea750d01b720ee7ec",
+            "price_sats": 100,
+            "product_id": "28e019f1dc524f23819be82e56657d4b",
+            "subtotal_sats": 100
+          }
+        ],
+        "status": "checked_out",
+        "buyer_id": "cf4c0bd5f2724334ba543fc3360a24a2",
+        "created_at": "2026-06-12T15:14:51.032017+00:00",
+        "expires_at": "2026-06-12T15:34:51.032017+00:00",
+        "total_sats": 100,
+        "cart_order_id": "1d5cfd2a48aa405e810c2ab8dcb05db5"
+      },
+      {
+        "id": "56506631a4c04e739eed3f67cac54009",
+        "items": [
+          {
+            "title": "Fhone Samsung",
+            "quantity": 1,
+            "seller_id": "2a8e383ab2964feaba116275fa70b148",
+            "price_sats": 100,
+            "product_id": "bee8cb22bcbc4bcb9479e4d37dcd5feb",
+            "subtotal_sats": 100
+          },
+          {
+            "title": "bitcoin book",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 100,
+            "product_id": "1126db402237465891a0fe004c82876b",
+            "subtotal_sats": 100
+          }
+        ],
+        "status": "checked_out",
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-12T15:51:39.466981+00:00",
+        "expires_at": "2026-06-12T16:11:39.466981+00:00",
+        "total_sats": 200,
+        "cart_order_id": "3c783da8eb704bf29b50b8a9ca361855"
+      },
+      {
+        "id": "eb55dd00300a408a827e690523a27241",
+        "items": [
+          {
+            "title": "bitcoin book",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 100,
+            "product_id": "1126db402237465891a0fe004c82876b",
+            "subtotal_sats": 100
+          }
+        ],
+        "status": "expired",
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-15T03:39:15.817045+00:00",
+        "expires_at": "2026-06-15T03:59:15.817045+00:00",
+        "total_sats": 100
+      },
+      {
+        "id": "a57ff34e6f8b4e03bc84381f23d0483f",
+        "items": [],
+        "status": "expired",
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-15T17:13:23.798600+00:00",
+        "expires_at": "2026-06-15T17:19:47.015119+00:00",
+        "total_sats": 0,
+        "cart_order_id": "dbcee0c9d8014ed1a6d56c85869ca347"
+      },
+      {
+        "id": "88b20085d3044ef2a8e746dfe4f7e3b6",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80
+          }
+        ],
+        "status": "expired",
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-15T17:25:03.828175+00:00",
+        "expires_at": "2026-06-15T17:50:47.027100+00:00",
+        "total_sats": 80,
+        "cart_order_id": null
+      },
+      {
+        "id": "0441ff662b5c4f79ac479c0a79156828",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80
+          }
+        ],
+        "status": "checked_out",
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-15T19:55:09.818741+00:00",
+        "expires_at": "2026-06-15T20:36:08.670616+00:00",
+        "total_sats": 80,
+        "cart_order_id": "716c7471d808485fb1dfd39b7123e18f"
+      },
+      {
+        "id": "3c2571e9ce6549c0a9faf7d5cba94449",
+        "items": [],
+        "status": "expired",
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-15T20:16:32.081347+00:00",
+        "expires_at": "2026-06-15T20:37:21.466552+00:00",
+        "total_sats": 0,
+        "cart_order_id": null
+      },
+      {
+        "id": "15c75710eafc41e595b0505b3fdb2901",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80
+          }
+        ],
+        "status": "checked_out",
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-16T16:53:19.165252+00:00",
+        "expires_at": "2026-06-16T17:13:19.165574+00:00",
+        "total_sats": 80,
+        "cart_order_id": "e00c4d888b444ea2b421f82b9b317a42"
+      },
+      {
+        "id": "ccea06b0f8cb422dbd77eb28e55cfbe1",
+        "items": [
+          {
+            "title": "tazas",
+            "quantity": 1,
+            "seller_id": "aea0523fd7b5450983c48ec8ffdbf6d3",
+            "price_sats": 200,
+            "product_id": "df2bae099c2e476fa4ded30f79fe3afd",
+            "subtotal_sats": 200
+          }
+        ],
+        "status": "checked_out",
+        "buyer_id": "2d00b159d59c429eae5f54be31d70bfa",
+        "created_at": "2026-06-16T17:10:14.905500+00:00",
+        "expires_at": "2026-06-16T17:30:14.905611+00:00",
+        "total_sats": 200,
+        "cart_order_id": "41f7f5fe18a94585937a42e3345067f7"
+      },
+      {
+        "id": "691e05b895c84e0995ae93c1c2d30085",
+        "items": [],
+        "status": "expired",
+        "buyer_id": "2d00b159d59c429eae5f54be31d70bfa",
+        "created_at": "2026-06-16T23:17:48.310038+00:00",
+        "expires_at": "2026-06-16T23:37:48.310230+00:00",
+        "total_sats": 0
+      },
+      {
+        "id": "113e6f88190542f99c364a19fa035ff0",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80
+          },
+          {
+            "title": "tazas",
+            "quantity": 1,
+            "seller_id": "aea0523fd7b5450983c48ec8ffdbf6d3",
+            "price_sats": 200,
+            "product_id": "df2bae099c2e476fa4ded30f79fe3afd",
+            "subtotal_sats": 200
+          }
+        ],
+        "status": "checked_out",
+        "buyer_id": "2d00b159d59c429eae5f54be31d70bfa",
+        "created_at": "2026-06-16T23:41:26.238950+00:00",
+        "expires_at": "2026-06-17T00:01:26.239104+00:00",
+        "total_sats": 280,
+        "cart_order_id": "3541945e7c3b43a38967ea17280189d9"
+      }
+    ],
+    "cart_orders": [
+      {
+        "id": "3c783da8eb704bf29b50b8a9ca361855",
+        "items": [
+          {
+            "title": "Fhone Samsung",
+            "quantity": 1,
+            "seller_id": "2a8e383ab2964feaba116275fa70b148",
+            "price_sats": 100,
+            "product_id": "bee8cb22bcbc4bcb9479e4d37dcd5feb",
+            "subtotal_sats": 100
+          },
+          {
+            "title": "bitcoin book",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 100,
+            "product_id": "1126db402237465891a0fe004c82876b",
+            "subtotal_sats": 100
+          }
+        ],
+        "notes": "------",
+        "cart_id": "56506631a4c04e739eed3f67cac54009",
+        "paid_at": "2026-06-12T15:53:45.671528+00:00",
+        "payouts": [
+          {
+            "error": null,
+            "status": "paid",
+            "seller_id": "2a8e383ab2964feaba116275fa70b148",
+            "gross_sats": 100,
+            "payout_sats": 97,
+            "seller_name": "jose",
+            "payment_hash": "522c9f1682fb87f7b57ce22274b4559fc8dbe00730d41493279f022857007dcd",
+            "platform_fee_sats": 3
+          },
+          {
+            "error": null,
+            "status": "paid",
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "gross_sats": 100,
+            "payout_sats": 97,
+            "seller_name": "Liliana12",
+            "payment_hash": "35752b4913e3a8cc436f1d985e8f3a779e353a4fb8098fb8a8c8e1ef2f5632be",
+            "platform_fee_sats": 3
+          }
+        ],
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-12T15:52:45.637386+00:00",
+        "total_sats": 200,
+        "payment_hash": "a257d60d638c97a82a62f90383509de860662a450eaaffcf981379bc519a5e8b",
+        "payout_status": "paid",
+        "payment_status": "paid",
+        "payment_request": "lnbc2u1p4zc26tdp6gf5hgntpwf4k2apqvdshyunfw3hjqs6pgv6ngvps8yszsv3qd96x2mtn9yxqzfvsp5kfslhjp80n36y0kdzn4fxwu09g2tjxc5aeqm4gd95j2k9sj7yf2spp55ftavrtr3jt6s2nzlypcx5yaapsxv2j9p640lnuczdumc5v6t69skmatferptkaap7m29t0lfrxdgc3z9cgw258pwmgsrjjv4lycsetrcus22hgf7jzxd3qqdrme2fxf7mur7pmxvzglvffrtgey4zxwxeqpdapp32",
+        "shipping_address": {
+          "zip": "1114",
+          "city": "marbella",
+          "name": "maria",
+          "street": "bonita",
+          "country": "El Salvador"
+        },
+        "created_order_ids": [
+          "5cfaaf7ffab4417a888799639506903b",
+          "1cb3bf7810094bb99f9a7f8204c1e4da"
+        ],
+        "invoice_expires_at": "2026-06-12T15:57:45.637386+00:00",
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "dbcee0c9d8014ed1a6d56c85869ca347",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80
+          }
+        ],
+        "notes": "----------------",
+        "cart_id": "a57ff34e6f8b4e03bc84381f23d0483f",
+        "paid_at": null,
+        "payouts": [],
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-15T17:14:19.930345+00:00",
+        "total_sats": 80,
+        "payment_hash": "87853ea28654a2400dada37b287b9e5ac312c0a4ef5d7c8d97ba704a9df03955",
+        "payout_status": null,
+        "payment_status": "expired",
+        "payment_request": "lnbc800n1p4rqvhvdp6gf5hgntpwf4k2apqvdshyunfw3hjqv3ngscrgwpngcszsvfqd96x2mtn9yxqzfvsp5z4ztgqj4xt077gt9nlzhkrscxj7q4nsujzl0vycwwzf4wre0sttspp5s7znag5x2j3yqrdd5dajs7u7ttp39s9yaawhervhhfcy480s892s50wretzyw4kyh6uvjm5jz6m4u28uln2czach592m99cnfz7reeyrzdmyjv3xvp96w55nhmd69j3ewz4jxqgg0d8res9hrys8w0um36cq39zs04",
+        "shipping_address": {
+          "zip": "1114",
+          "city": "Liberta",
+          "name": "lorena",
+          "street": "Calle Santa techa, avenida norte",
+          "country": "El Salvador"
+        },
+        "invoice_expires_at": "2026-06-15T17:19:19.930383+00:00",
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "065aef5decd641b6b1960390c23d6540",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80
+          }
+        ],
+        "notes": "----------------",
+        "cart_id": "88b20085d3044ef2a8e746dfe4f7e3b6",
+        "paid_at": null,
+        "payouts": [],
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-15T17:25:46.921957+00:00",
+        "total_sats": 80,
+        "payment_hash": "436253062443967cdc3e4df56a388c43144cbb7a880192d7cc21695e50b82b75",
+        "payout_status": null,
+        "payment_status": "expired",
+        "payment_request": "lnbc800n1p4rqdvmdp6gf5hgntpwf4k2apqvdshyunfw3hjq3f5gcm52v6zxcszsvfqd96x2mtn9yxqzfvsp5mssxflfwpn4hm8kt0l8ylqah204t7h4fld8g6f9qvymue3eqz6rspp5gd39xp3ygwt8ehp7fh6k5wyvgv2yewm63qqe947vy954u59c9d6szm5ytv3649he6qz4990rf8pu9j6650c30cmwtakdw34c5wktk0kk00sn2hskvdtzwz6gz8cy87vjaftf9rv4g40x5ayt792v4megyxcp4qw9me",
+        "shipping_address": {
+          "zip": "1114",
+          "city": "Santa tecka",
+          "name": "Enrique",
+          "street": "cunatos datos ,bienvenidos",
+          "country": "El Salvador"
+        },
+        "invoice_expires_at": "2026-06-15T17:30:46.921989+00:00",
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "0980cc555272468990768dcb5c593805",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80
+          }
+        ],
+        "notes": "-------------------------",
+        "cart_id": "0441ff662b5c4f79ac479c0a79156828",
+        "paid_at": null,
+        "payouts": [],
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-15T20:11:08.564228+00:00",
+        "total_sats": 80,
+        "payment_hash": "61500eecd5a83afc1a6fc5e0c7ec019697dc1b6116f33076d7362c3b7cbfe96c",
+        "payout_status": null,
+        "payment_status": "expired",
+        "payment_request": "lnbc800n1p4rqhzadp6gf5hgntpwf4k2apqvdshyunfw3hjqdeexy6nvwpj8qszsvfqd96x2mtn9yxqzfvsp597ncgap66qhd26y37fvtzqhgjeve7ve5gpxqmvcrfq6nvezdh5vqpp5v9gqamx44qa0cxn0chsv0mqpj6tacxmpzmenqakhxckrkl9la9kq2n7lfv6e5dmq75sk4ne4p37pt48crwmat6tn4d4hs8easf4ruvn8zulxu5wvzu3j86yrldp8e0j2887atdfn5fardnhw9vmn4kf2w9gq7u0cy4",
+        "shipping_address": {
+          "zip": "1115",
+          "city": "Sonsonate",
+          "name": "CASAS",
+          "street": "NUEVOS DATOS",
+          "country": "Guatemala"
+        },
+        "invoice_expires_at": "2026-06-15T20:16:08.564256+00:00",
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "716c7471d808485fb1dfd39b7123e18f",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80
+          }
+        ],
+        "notes": "-------------------------",
+        "cart_id": "0441ff662b5c4f79ac479c0a79156828",
+        "paid_at": null,
+        "payouts": [],
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-15T20:16:13.613101+00:00",
+        "total_sats": 80,
+        "payment_hash": "3497219e918ff2a51212839f093124b8099613a545a306a698d14a334d56df81",
+        "payout_status": null,
+        "payment_status": "awaiting_payment",
+        "payment_request": "lnbc800n1p4rqhvwdp6gf5hgntpwf4k2apqvdshyunfw3hjqdeexy6nvwpj8qszsvfqd96x2mtn9yxqzfvsp5ggu4utuju827nwls4leadhpdz00cjs6sxhjqw9zr00avh898fquqpp5xjtjr8533le22ysjsw0sjvfyhqyevya9gk3sdf5c699rxn2km7qs5vtcet9f0s2dhnkgrkegjplf2sp0duwccs0y47hdqg6xyaypy3cxngv8nxz3nayweq4mth7am6r7na2mm7v2wjd0feykn0az2r2fmhgpry4w6w",
+        "shipping_address": {
+          "zip": "1115",
+          "city": "Sonsonate",
+          "name": "CASAS",
+          "street": "NUEVOS DATOS",
+          "country": "Guatemala"
+        },
+        "invoice_expires_at": "2026-06-15T20:21:13.613131+00:00",
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "e2e0f0f621fb43f281a32ced81ca44b6",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80
+          }
+        ],
+        "notes": "------",
+        "cart_id": "3c2571e9ce6549c0a9faf7d5cba94449",
+        "paid_at": null,
+        "payouts": [],
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-15T20:17:03.891880+00:00",
+        "total_sats": 80,
+        "payment_hash": "a1905213fbef1d94f50927bb5531b207d720f01988cbdcc0330779bcacde4fe1",
+        "payout_status": null,
+        "payment_status": "cancelled",
+        "payment_request": "lnbc800n1p4rqhwqdp6gf5hgntpwf4k2apqvdshyunfw3hjqs6zgyungdp58yszsvfqd96x2mtn9yxqzfvsp5usrctkaspw4ep9cfsynsjtm5pck39qxjfsq0y6luzhj32lzhgm3qpp55xg9yylmauwefagfy7a42vdjqltjpuqe3r9aespnqaumetx7flsszx0zkwv9cth4tjzt7usy846z8dpjlweh76c39elm4qpdtxxkwx9866v7xzpvw0rlch2q9jvycm9n58795c3q49hez2dxs0whpxqvh3gp8fe7e9",
+        "shipping_address": {
+          "zip": "1114",
+          "city": "liberta",
+          "name": "nuevos datos",
+          "street": "bonita-calle",
+          "country": "El Salvador"
+        },
+        "invoice_expires_at": "2026-06-15T20:22:03.891907+00:00",
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "e00c4d888b444ea2b421f82b9b317a42",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80
+          }
+        ],
+        "notes": "-----",
+        "cart_id": "15c75710eafc41e595b0505b3fdb2901",
+        "paid_at": "2026-06-16T16:54:05.240002+00:00",
+        "payouts": [
+          {
+            "error": null,
+            "status": "paid",
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "gross_sats": 80,
+            "payout_sats": 78,
+            "seller_name": "Liliana12",
+            "payment_hash": "a5cab773f08c3fbc0488fba8410a0c3483b0edfbe1c68c8a19af54fa399d3ce1",
+            "platform_fee_sats": 2
+          }
+        ],
+        "buyer_id": "8e7504674bad4ad785e1c27f776b6824",
+        "created_at": "2026-06-16T16:53:42.573918+00:00",
+        "total_sats": 80,
+        "payment_hash": "0eff1259269de0eda5f0bf98a793e0e30dffbc8dd50ca801473b0ea6f8ca2abf",
+        "payout_status": "paid",
+        "payment_status": "paid",
+        "payment_request": "lnbc800n1p4rzlu5pp5pml3ykfxnhswmf0sh7v20ylquvxll0yd65x2sq288v82d7x292lsdp6gf5hgntpwf4k2apqvdshyunfw3hjqv6xg3prywfsxyszsvfqd96x2mtn9ycqzpuxqrwzqsp57la7tyfekc9fm8s9d4tftukhgzadwq6gnfsht9prcj2rlrwnevjq9qxpqysgq06mjka7v8j7xl8e93rqch07lz9k3z46vmgscd8q0m38ec8k5s57sgvd4djcn6qtmeznzqhw8tfrgy4766vxhg7s0d3ndla9s75ea34cp9mqe5f",
+        "shipping_address": {
+          "zip": "1115",
+          "city": "Sonsonate",
+          "name": "maria",
+          "street": "NUEVOS DATOS",
+          "country": "Guatemala"
+        },
+        "created_order_ids": [
+          "4fa0d1fec94343858c57946f7faa9055"
+        ],
+        "invoice_expires_at": "2026-06-16T16:58:42.573948+00:00",
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "41f7f5fe18a94585937a42e3345067f7",
+        "items": [
+          {
+            "title": "tazas",
+            "quantity": 1,
+            "seller_id": "aea0523fd7b5450983c48ec8ffdbf6d3",
+            "price_sats": 200,
+            "product_id": "df2bae099c2e476fa4ded30f79fe3afd",
+            "subtotal_sats": 200
+          }
+        ],
+        "notes": null,
+        "cart_id": "ccea06b0f8cb422dbd77eb28e55cfbe1",
+        "paid_at": "2026-06-16T17:12:33.928044+00:00",
+        "payouts": [
+          {
+            "error": null,
+            "status": "paid",
+            "seller_id": "aea0523fd7b5450983c48ec8ffdbf6d3",
+            "gross_sats": 200,
+            "payout_sats": 194,
+            "seller_name": "Jose Jimenez",
+            "payment_hash": "fc60ec4c8096f3c39a357e68a3271844b81340d2b16e108b7348e855d53808ce",
+            "platform_fee_sats": 6
+          }
+        ],
+        "buyer_id": "2d00b159d59c429eae5f54be31d70bfa",
+        "created_at": "2026-06-16T17:11:07.251850+00:00",
+        "total_sats": 200,
+        "payment_hash": "6bb8e4ee84c6a1140819d91bda62a3a162fd3de30438ac202adb6f1c7e02acfb",
+        "payout_status": "paid",
+        "payment_status": "paid",
+        "payment_request": "lnbc2u1p4rrqafpp5dwuwfm5yc6s3gzqemyda5c4r5930600rqsu2cgp2mdh3clsz4nasdp6gf5hgntpwf4k2apqvdshyunfw3hjq3f4x4p5vsj9xyszsvfqd96x2mtn9ycqzpuxqrwzqsp5nq32me42u4f9695sdccmky0ztge7e734ruvyvdrv6urz5nsqskts9qxpqysgqkwuz07287yluhqcpq25dw0g5jq9vw4n9uql6crkdnazy9g7y4dpqj9xx5e4ptq6zqaac9rpln6nv0306l59m4kp224axyg2l872qxwqqm7cuyx",
+        "shipping_address": {
+          "zip": "1114",
+          "city": "soyapango",
+          "name": "ricardo",
+          "street": "col.soyacity",
+          "country": "el salvador"
+        },
+        "created_order_ids": [
+          "d88efbd655494df29ba00d5213490c57"
+        ],
+        "invoice_expires_at": "2026-06-16T17:16:07.251882+00:00",
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "3541945e7c3b43a38967ea17280189d9",
+        "items": [
+          {
+            "title": "Fhone LG",
+            "quantity": 1,
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "price_sats": 80,
+            "product_id": "a0cc8059ef09401ab5036ed004c98b82",
+            "subtotal_sats": 80
+          },
+          {
+            "title": "tazas",
+            "quantity": 1,
+            "seller_id": "aea0523fd7b5450983c48ec8ffdbf6d3",
+            "price_sats": 200,
+            "product_id": "df2bae099c2e476fa4ded30f79fe3afd",
+            "subtotal_sats": 200
+          }
+        ],
+        "notes": "-----",
+        "cart_id": "113e6f88190542f99c364a19fa035ff0",
+        "paid_at": "2026-06-16T23:48:08.871853+00:00",
+        "payouts": [
+          {
+            "error": null,
+            "status": "paid",
+            "seller_id": "0137ed77e28a4c75a1ddeafb5f1f60d1",
+            "gross_sats": 80,
+            "payout_sats": 78,
+            "seller_name": "Liliana12",
+            "payment_hash": "f53c936f253f8af76e06e45e72e2fda762bf3bb10c586e8f2b0c18c3d20d0258",
+            "platform_fee_sats": 2
+          },
+          {
+            "error": null,
+            "status": "paid",
+            "seller_id": "aea0523fd7b5450983c48ec8ffdbf6d3",
+            "gross_sats": 200,
+            "payout_sats": 194,
+            "seller_name": "Jose Jimenez",
+            "payment_hash": "ae38018a80a141591a4fa9a083798e9883f4467b05e6a8f94af7c9dc53a3c59e",
+            "platform_fee_sats": 6
+          }
+        ],
+        "buyer_id": "2d00b159d59c429eae5f54be31d70bfa",
+        "created_at": "2026-06-16T23:47:11.933451+00:00",
+        "total_sats": 280,
+        "payment_hash": "720076e4eb8e8efbf3636cb790283cfbc1c5a8f588905ff5331d23b85b30263b",
+        "payout_status": "paid",
+        "payment_status": "paid",
+        "payment_request": "lnbc2800n1p4rrcr7pp5wgq8de8t3680humrdjmeq2pul0qut2843zg9lafnr53mskesycasdp6gf5hgntpwf4k2apqvdshyunfw3hjq3jpxqen23jxxqszsv3qd96x2mtn9ycqzpuxqrwzqsp5r8xgn744gj8zq9tuq7zcfujdzpqswwmxzqazhyqq5jk932x7uzpq9qxpqysgqgqv76fxwx6yj46yjl6vmhcdxv0vkprnxcvvnx3gkp4xx9gpdh7rsley2ntv2r0rmqjtpdu58lxqyf3v9hu8jttr7tr70jy05tung02sqh2tgl7",
+        "shipping_address": {
+          "zip": "1114",
+          "city": "Ahucahapan",
+          "name": "maria elena",
+          "street": "numeros aleatorios",
+          "country": "El Salvador"
+        },
+        "created_order_ids": [
+          "29924514be9847218bd60c3e88517146",
+          "f8e7c7196e294e2bad442a4ce064076c"
+        ],
+        "invoice_expires_at": "2026-06-16T23:52:11.933482+00:00",
+        "marketplace_fee_percent": 3.0
+      },
+      {
+        "id": "1d5cfd2a48aa405e810c2ab8dcb05db5",
+        "items": [
+          {
+            "title": "shirt",
+            "quantity": 1,
+            "seller_id": "86d6e69d2f7349dea750d01b720ee7ec",
+            "price_sats": 100,
+            "product_id": "28e019f1dc524f23819be82e56657d4b",
+            "subtotal_sats": 100
+          }
+        ],
+        "notes": "---------",
+        "cart_id": "91ce5df7dc05431b856ad4c58c3e6fb0",
+        "paid_at": "2026-06-12T15:17:08.030337+00:00",
+        "payouts": [
+          {
+            "error": null,
+            "status": "paid",
+            "seller_id": "86d6e69d2f7349dea750d01b720ee7ec",
+            "gross_sats": 100,
+            "payout_sats": 97,
+            "seller_name": "jose",
+            "payment_hash": "dc05264bdada46dc4e6ef9e4505b50b0025da2189f2152833dc2585705a5032c",
+            "platform_fee_sats": 3
+          }
+        ],
+        "buyer_id": "cf4c0bd5f2724334ba543fc3360a24a2",
+        "created_at": "2026-06-12T15:15:48.378656+00:00",
+        "total_sats": 100,
+        "payment_hash": "c1b30f494fbd0a55fd0e13f9fca07d781abd1061ddb5c46aa76021bdcd323e39",
+        "payout_status": "paid",
+        "payment_status": "paid",
+        "payment_request": "lnbc1u1p4zcg4zdp6gf5hgntpwf4k2apqvdshyunfw3hjqwzrxdznv3jzxqszsvfqd96x2mtn9yxqzfvsp5220t9n9za745gwyy7uv24ceg8k6z4d4csxuhec3vz038mm9z76lspp5cxes7j20h599tlgwz0ulegra0qdt6yrpmk6ug648vqsmmnfj8cus9qzwgcelurrjnwyu5lzz5y3jrg430w5dgdz73g45mp8peqccqcr8dwhcku42nfr0wr9rezmnu0qkrcm899xw9vszapt06n95rtqqmlspxpapsp",
+        "shipping_address": {
+          "zip": "1114",
+          "city": "san salvador",
+          "name": "carlos",
+          "street": "calle",
+          "country": "El Salvador"
+        },
+        "created_order_ids": [
+          "ae4d8e67fc2d4fa7a60d0b3d6f2ecd08"
+        ],
+        "invoice_expires_at": "2026-06-12T15:20:48.378656+00:00",
+        "marketplace_fee_percent": 3.0
+      }
+    ]
+  }
+}

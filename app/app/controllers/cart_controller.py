@@ -71,3 +71,12 @@ async def cart_payment_status(
     """GET /cart/payment-status/{payment_hash} — Poll invoice confirmation."""
     result = await cart_service.confirm_payment(payment_hash)
     return {"success": True, **result}
+
+
+async def cancel_cart_invoice(
+    payment_hash: str,
+    current_user: dict = Depends(get_buyer),
+):
+    """POST /cart/cancel-invoice/{payment_hash} — Cancel unpaid invoice and unlock cart."""
+    result = cart_service.cancel_invoice(payment_hash, current_user["id"])
+    return {"success": True, **result}

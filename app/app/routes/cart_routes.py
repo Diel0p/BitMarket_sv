@@ -22,3 +22,4 @@ router.delete("/items/{product_id}",                 summary="Remove item from c
 router.delete("",                                    summary="Clear cart")(cart_controller.clear_cart)
 router.post("/checkout",                             summary="Checkout cart → Lightning invoice")(cart_controller.checkout)
 router.get("/payment-status/{payment_hash}",         summary="Poll cart invoice payment")(cart_controller.cart_payment_status)
+router.post("/cancel-invoice/{payment_hash}",        summary="Cancel cart invoice and unlock cart")(cart_controller.cancel_cart_invoice)

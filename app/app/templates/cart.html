@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Mi Carrito{% endblock %}
+{% block title %}My Cart{% endblock %}
 
 {% block content %}
 <div class="page-narrow">
-  <h1 class="section-title" style="margin-bottom:8px">🛒 Mi Carrito</h1>
+  <h1 class="section-title" style="margin-bottom:8px">🛒 My Cart</h1>
   <p class="text-muted text-sm" id="cart-expires-label" style="text-align:center;margin-bottom:28px"></p>
 
   <div id="cart-content">
@@ -27,7 +27,7 @@ async function loadCart() {
       window.location.href = '/login';
     } else {
       document.getElementById('cart-content').innerHTML =
-        `<p class="text-muted" style="text-align:center">Error al cargar el carrito.</p>`;
+        `<p class="text-muted" style="text-align:center">Could not load the cart.</p>`;
     }
   }
 }
@@ -36,14 +36,18 @@ function renderCart() {
   const box = document.getElementById('cart-content');
 
   if (!cartData || !cartData.items || cartData.items.length === 0) {
+    if (expiryInterval) {
+      clearInterval(expiryInterval);
+      expiryInterval = null;
+    }
     document.getElementById('cart-expires-label').textContent = '';
     window.refreshCartCount?.();
     box.innerHTML = `
       <div style="text-align:center;padding:60px 20px">
         <div style="font-size:4rem;margin-bottom:16px">🛒</div>
-        <h2 style="font-weight:600;margin-bottom:8px">Tu carrito está vacío</h2>
-        <p class="text-muted" style="margin-bottom:24px">Agrega productos para comenzar</p>
-        <a href="/products" class="btn btn-primary">Ver productos</a>
+        <h2 style="font-weight:600;margin-bottom:8px">Your cart is empty</h2>
+        <p class="text-muted" style="margin-bottom:24px">Add products to get started</p>
+        <a href="/products" class="btn btn-primary">View products</a>
       </div>
     `;
     return;
@@ -100,10 +104,10 @@ function renderCart() {
         </div>
       </div>
       <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
-        <a href="/products" class="btn btn-ghost btn-sm">Seguir comprando</a>
-        <button class="btn btn-outline btn-sm" onclick="clearCart()">Vaciar carrito</button>
+        <a href="/products" class="btn btn-ghost btn-sm">Continue shopping</a>
+        <button class="btn btn-outline btn-sm" onclick="clearCart()">Clear cart</button>
         <a href="/cart/checkout" class="btn btn-primary" style="flex:1;text-align:center">
-          Ir al checkout →
+            Proceed to pay →
         </a>
       </div>
     </div>
@@ -124,7 +128,7 @@ function startExpiryTimer() {
     const diff = Math.max(0, Math.floor((expiry - Date.now()) / 1000));
     if (diff === 0) {
       clearInterval(expiryInterval);
-      label.textContent = '⏰ Carrito expirado';
+      label.textContent = '⏰ Cart expired';
       label.style.color = 'var(--error, #ef4444)';
       cartData = null;
       renderCart();
@@ -132,7 +136,7 @@ function startExpiryTimer() {
     }
     const m = Math.floor(diff / 60).toString().padStart(2, '0');
     const s = (diff % 60).toString().padStart(2, '0');
-    label.textContent = `⏱ El carrito expira en ${m}:${s}`;
+    label.textContent = `⏱ Cart expires in ${m}:${s}`;
   }
   tick();
   expiryInterval = setInterval(tick, 1000);
@@ -148,7 +152,7 @@ async function changeQty(productId, newQty) {
     cartData = data.cart;
     renderCart();
   } catch(e) {
-    showToast(e.message || 'Error al actualizar cantidad', 'error');
+    showToast(e.message || 'Could not update quantity', 'error');
   }
 }
 
@@ -158,23 +162,24 @@ async function removeItem(productId) {
     cartData = data.cart;
     renderCart();
   } catch(e) {
-    showToast(e.message || 'Error al eliminar item', 'error');
+    showToast(e.message || 'Could not remove item', 'error');
   }
 }
 
 async function clearCart() {
-  const confirmed = await confirmAction('¿Vaciar carrito?', {
-    title: 'Vaciar carrito',
-    confirmText: 'Vaciar',
+  const confirmed = await confirmAction('Clear the cart?', {
+    title: 'Clear cart',
+    confirmText: 'Clear',
   });
   if (!confirmed) return;
   try {
     const data = await apiFetch('/cart', { method: 'DELETE' });
     cartData = data.cart;
+    if (typeof updateCartIndicators === 'function') updateCartIndicators(0);
     renderCart();
-    showToast('Carrito vaciado correctamente', 'success');
+    showToast('Cart cleared successfully', 'success');
   } catch(e) {
-    showToast(e.message || 'Error al vaciar carrito', 'error');
+    showToast(e.message || 'Could not clear the cart', 'error');
   }
 }
 
