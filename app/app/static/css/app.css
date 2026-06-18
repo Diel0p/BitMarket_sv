@@ -212,9 +212,6 @@ textarea { resize: vertical; min-height: 90px; }
   z-index: 90;
 }
 .page-overlay.open { display: block; }
-.dash-mobile-toggle,
-.filters-mobile-toggle { display: none; }
-
 /* ── Buttons ───────────────────────────────────────────────── */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -236,6 +233,8 @@ textarea { resize: vertical; min-height: 90px; }
 .btn-sm { padding: 7px 14px; font-size: 0.8rem; }
 .btn-full { width: 100%; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+.dash-mobile-toggle,
+.filters-mobile-toggle { display: none; }
 
 /* ── Cards ─────────────────────────────────────────────────── */
 .card {
