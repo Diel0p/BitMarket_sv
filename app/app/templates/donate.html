@@ -5,9 +5,9 @@
 <div class="container page" style="max-width:800px">
   <div style="text-align:center;margin-bottom:40px">
     <div style="font-size:3rem;margin-bottom:16px">⚡💛</div>
-    <h1 style="font-size:2.2rem;font-weight:700;margin-bottom:12px">Apoya BitMarket SV</h1>
+    <h1 style="font-size:clamp(1.6rem, 7vw, 2.2rem);font-weight:700;margin-bottom:12px">Apoya BitMarket SV</h1>
     <p style="font-size:1.1rem;color:var(--text-2);max-width:600px;margin:0 auto">
-      Este proyecto es desarrollado por estudiantes de Cubo+ en El Salvador. 
+      Este proyecto es desarrollado por estudiantes de Cubo+ en El Salvador.
       Tu apoyo nos ayuda a mantener y mejorar la plataforma.
     </p>
   </div>
@@ -106,7 +106,7 @@
   <div id="success-message" class="card" style="margin-bottom:24px;display:none;border:3px solid #16a34a">
     <div class="card-body" style="text-align:center;padding:48px 24px">
       <div style="font-size:4rem;margin-bottom:16px">🎉💚⚡</div>
-      <h2 style="font-size:2rem;font-weight:700;color:#16a34a;margin-bottom:12px">
+      <h2 style="font-size:clamp(1.4rem, 6vw, 2rem);font-weight:700;color:#16a34a;margin-bottom:12px">
         ¡Donación Recibida!
       </h2>
       <p style="font-size:1.2rem;color:var(--text-2);margin-bottom:24px">
@@ -416,6 +416,10 @@ function copyInvoice() {
 
 #qr-image:hover {
   transform: scale(1.05);
+}
+
+@media (max-width: 480px) {
+  #qr-image { max-width: 100% !important; }
 }
 </style>
 {% endblock %}

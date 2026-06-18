@@ -219,5 +219,12 @@ document.addEventListener('DOMContentLoaded', loadCart);
 }
 .cart-summary__row:last-of-type { border-bottom: none; }
 .cart-summary__total { font-size: 1.1rem; font-weight: 700; padding-top: 12px; }
+
+@media (max-width: 480px) {
+  .cart-item { flex-wrap: wrap; gap: 10px 12px; padding: 14px; }
+  .cart-item__info { flex: 1 1 100%; }
+  .cart-item__subtotal { min-width: 0; margin-left: auto; }
+  .cart-summary__row { flex-wrap: wrap; gap: 4px; }
+}
 </style>
 {% endblock %}

@@ -433,17 +433,107 @@ function productCard(p) {
   `;
 }
 
+// ── Mobile nav / drawers (hamburger menu, dashboard sidebar, filters) ──
+function setupMobileDrawers() {
+  const overlay = document.getElementById('page-overlay');
+  const searchMobile = document.getElementById('search-form-mobile');
+  const drawers = [];
+
+  function closeAll() {
+    drawers.forEach(d => {
+      d.panel.classList.remove('open');
+      d.toggle.classList.remove('is-open');
+      d.toggle.setAttribute('aria-expanded', 'false');
+    });
+    overlay?.classList.remove('open');
+    searchMobile?.classList.remove('open');
+  }
+
+  function register(toggle, panel) {
+    if (!toggle || !panel) return;
+    drawers.push({ toggle, panel });
+    toggle.addEventListener('click', () => {
+      const willOpen = !panel.classList.contains('open');
+      closeAll();
+      if (willOpen) {
+        panel.classList.add('open');
+        toggle.classList.add('is-open');
+        toggle.setAttribute('aria-expanded', 'true');
+        overlay?.classList.add('open');
+      }
+    });
+  }
+
+  overlay?.addEventListener('click', closeAll);
+  window.closeMobileDrawers = closeAll;
+
+  // Hamburger -> nav menu
+  register(document.getElementById('navbar-hamburger'), document.getElementById('navbar-auth'));
+
+  // Dashboard sidebar (seller/admin pages) — inject a toggle button if present
+  const dashSidebar = document.querySelector('.dash-sidebar');
+  if (dashSidebar) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'dash-mobile-toggle btn btn-outline btn-sm';
+    btn.setAttribute('aria-label', 'Abrir menu del panel');
+    btn.innerHTML = '☰ Menu';
+    dashSidebar.insertAdjacentElement('beforebegin', btn);
+    register(btn, dashSidebar);
+  }
+
+  // Products filters sidebar — inject a toggle button if present
+  const filtersSidebar = document.querySelector('.filters-sidebar');
+  if (filtersSidebar) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'filters-mobile-toggle btn btn-outline btn-sm';
+    btn.setAttribute('aria-label', 'Abrir filtros');
+    btn.innerHTML = '⚙ Filtros';
+    filtersSidebar.insertAdjacentElement('beforebegin', btn);
+    register(btn, filtersSidebar);
+  }
+
+  // Navbar search icon toggle (mobile)
+  const searchToggle = document.getElementById('navbar-search-toggle');
+  if (searchToggle && searchMobile) {
+    searchToggle.addEventListener('click', () => {
+      const willOpen = !searchMobile.classList.contains('open');
+      closeAll();
+      if (willOpen) {
+        searchMobile.classList.add('open');
+        document.getElementById('search-input-mobile')?.focus();
+      }
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 900) closeAll();
+  });
+}
+
 // ── Run on every page ─────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   hydrateNavbar();
   refreshCartCount();
+  setupMobileDrawers();
 
-  // Navbar search
+  // Navbar search (desktop)
   const searchForm = document.getElementById('search-form');
   if (searchForm) {
     searchForm.addEventListener('submit', e => {
       e.preventDefault();
       const q = document.getElementById('search-input').value.trim();
+      if (q) window.location.href = `/products?q=${encodeURIComponent(q)}`;
+    });
+  }
+
+  // Navbar search (mobile)
+  const searchFormMobile = document.getElementById('search-form-mobile');
+  if (searchFormMobile) {
+    searchFormMobile.addEventListener('submit', e => {
+      e.preventDefault();
+      const q = document.getElementById('search-input-mobile').value.trim();
       if (q) window.location.href = `/products?q=${encodeURIComponent(q)}`;
     });
   }

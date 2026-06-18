@@ -6,7 +6,7 @@
   <title>{% block title %}BitMarket SV{% endblock %} — ⚡ Bitcoin Marketplace</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/static/css/app.css?v=20260603" />
+  <link rel="stylesheet" href="/static/css/app.css?v=20260617" />
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -24,6 +24,8 @@
       <button type="submit" class="navbar__search-btn">🔍</button>
     </form>
 
+    <button type="button" class="navbar__icon-btn navbar__search-toggle" id="navbar-search-toggle" aria-label="Buscar">🔍</button>
+
     <nav class="navbar__actions" id="navbar-auth">
       <!-- hydrated by app.js -->
       <a href="/nosotros" class="navbar__link">Nosotros</a>
@@ -31,8 +33,18 @@
       <a href="/login"    class="navbar__link">Login</a>
       <a href="/register" class="navbar__btn">Sign up</a>
     </nav>
+
+    <button type="button" class="navbar__hamburger" id="navbar-hamburger" aria-label="Abrir menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
+
+  <form id="search-form-mobile" class="navbar__search-mobile">
+    <input id="search-input-mobile" type="text" placeholder="Search products…" />
+    <button type="submit" class="navbar__search-btn">🔍</button>
+  </form>
 </header>
+<div class="page-overlay" id="page-overlay"></div>
 
 <!-- ── Page content ──────────────────────────────────── -->
 {% block content %}{% endblock %}
@@ -59,7 +71,7 @@
   </div>
 </footer>
 
-<script src="/static/js/app.js?v=20260605002"></script>
+<script src="/static/js/app.js?v=20260617001"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
